@@ -1,0 +1,31 @@
+{
+	"folders": [
+		{
+			"path": "server"
+		},
+		{
+			"path": "client"
+		}
+	],
+	"settings": {
+
+	},
+	"launch" : {
+		"configurations": [ ],
+		"compounds": [{
+			"name": "Debug Client and Backend",
+			"configurations": [
+			  "Launch Chrome Connected to Backend",
+			  "Debug Backend Connected To Devserver"
+			]
+		},
+		{
+			"name": "Debug Production Client and Backend",
+			"configurations": [
+			  "Launch Chrome in Production",
+			  "Debug Backend"
+			]
+		},
+		]
+	}
+}

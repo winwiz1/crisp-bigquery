@@ -4,6 +4,7 @@ logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+key.json
 
 # Runtime data
 pids
@@ -29,8 +30,10 @@ bower_components
 # node-waf configuration
 .lock-wscript
 
-# Compiled binary addons (https://nodejs.org/api/addons.html)
-build/Release
+# Build artefacts
+build/
+dist/
+server/config/
 
 # Dependency directories
 node_modules/
@@ -55,7 +58,7 @@ typings/
 .yarn-integrity
 
 # dotenv environment variables file
-.env
+# .env
 
 # next.js build output
 .next

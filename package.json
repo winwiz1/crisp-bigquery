@@ -1,0 +1,50 @@
+{
+  "name": "crisp-bigquery",
+  "version": "1.0.0",
+  "description": "Full stack BigQuery with React and Express in TypeScript",
+  "author": "winwiz1 <winwiz@gmail.com> (https://github.com/winwiz1/)",
+  "contributors": [
+    "winwiz1 <winwiz@gmail.com> (https://github.com/winwiz1/)"
+  ],
+  "license": "MIT",
+  "homepage": "https://winwiz1.github.io/crisp-bigquery/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/winwiz1/crisp-bigquery.git"
+  },
+  "keywords": [
+    "bigquery",
+    "react",
+    "redux",
+    "typescript",
+    "express",
+    "visual-studio-code",
+    "chrome-devtools",
+    "webpack",
+    "webpack-dev-server",
+    "typestyle",
+    "react-testing-library",
+    "supertest",
+    "jest",
+    "semantic-ui"
+  ],
+  "files": [
+    "./client/*",
+    "./server/*"
+  ],
+  "scripts": {
+    "install": "cd client && yarn",
+    "postinstall": "cd server && yarn",
+    "test": "cd client && yarn test",
+    "posttest": "cd server && yarn copy && yarn test",
+    "compile": "cd client && yarn compile",
+    "postcompile": "cd server && yarn compile",
+    "build": "cd client && yarn build",
+    "postbuild": "cd server && yarn prestart",
+    "build:prod": "cd client && yarn build:prod",
+    "postbuild:prod": "cd server && yarn prestart",
+    "start:prod": "cd client && yarn build:prod",
+    "poststart:prod": "cd server && yarn start:prod",
+    "run:prod": "cd server && yarn run:prod"
+  }
+}
