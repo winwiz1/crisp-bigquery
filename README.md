@@ -14,7 +14,7 @@
 </div>
 
 ## Project Highlights
-Full stack solution that delivers Google BigQuery data to your browser. Includes React client and Express backend written in Typescript. Uses data pagination natively supported by BigQuery and is based on studying the Google client library source code since there are no sample projects with pagination support. The solution features:
+Full stack solution that delivers Google BigQuery data to your browser. Includes React client and Express backend written in Typescript. Uses data pagination natively supported by BigQuery and is based on the API [documentation](https://cloud.google.com/bigquery/docs/reference/rest/v2/jobs/getQueryResults) and studying the Google [client library](https://github.com/googleapis/nodejs-bigquery) source code since there are no samples with auto-pagination. The solution features:
 * User defined search options with security mitigation aimed at preventing SQL injection.
 * Pagination support with up to 1000 rows (defined by the pagination size) delivered in one request. The pagination size can be set by a user within the range of 1-1000 rows and defaults to 100 rows.
 * Integration with Travis CI. The CI runs tests on each commit and the result is reflected by the test badge. The tests fetch data from BigQuery and then exercise non-paginated and paginated requests looping through the latter until the end of the data is reached.
@@ -63,7 +63,7 @@ Create `samples.github` table optimised for better performance and lower data us
 
     The dataset `samples` with the `samples.github` table should be created. Queries against this table will incur significantly lower data usage (*) in comparison with the public dataset we used as the data source. The created dataset takes 286 MB counted towards BigQuery free 10 GB storage allowance.
 
-    > (*) That's because the table we created contains a subset of public data, is partitioned e.g. split internally into daily partitions **and** the frontend allows only queries with the timeframe up to one week long. It means the BigQuery engine doesn't have to scan the whole table as it can select only few daily partitions which brings down the data usage. The usage depends on the amount of data processed by the BigQuery engine while executing the request and not on the size of the returned data.<br/>
+    > (*) That's because the table we created contains a subset of public data, is partitioned e.g. split internally into daily partitions and the frontend allows only queries with the timeframe up to one week long. It means the BigQuery engine doesn't have to scan the whole table as it can select only few daily partitions which brings down the data usage. The usage depends on the amount of data processed by the BigQuery engine while executing the request and not on the size of the returned data.<br/>
 For queries covering wider timeframes e.g. years and tables that have small amount of daily data, partitioning into daily partitions could have a [detrimental effect](https://stackoverflow.com/a/58175053) on data usage. On the one hand the engine cannot be selective too much in terms of partitions and on the other hand the minimum partition size could be greater than the amount of daily data thus increasing the volume of disk space processed by the engine.
 
 5. **Change and display the table settings.**<br/>
@@ -80,7 +80,7 @@ Execute commands:
 In the following commands:
 
     ```
-    gcloud iam service-accounts create <sa-name> --display-name "<sa-name>" --description "Test SA - delete when tests finished"
+    gcloud iam service-accounts create <sa-name> --display-name "<sa-name>" --description "Test SA - delete when not needed anymore"
     gcloud projects add-iam-policy-binding <project-name> --member=serviceAccount:<sa-name>@<project-name>.iam.gserviceaccount.com --role roles/bigquery.jobUser
     ```
  
@@ -89,7 +89,13 @@ In the following commands:
     `<project-name>` - replace with the project name.
 
     and execute the commands. The role `bigquery.jobUser` granted by the last command is not enough. Another permission is required and there are two options to add it:
-* Grant the `bigquery.dataViewer` role to the service account by modifying the last command. Then proceed to the next step. Not recommended unless you are using a throw-away project. The drawback of this approach is granting permissions to view all project datasets.
+* Grant the `bigquery.dataViewer` role to the service account:
+
+    ```
+    gcloud projects add-iam-policy-binding <project-name> --member=serviceAccount:<sa-name>@<project-name>.iam.gserviceaccount.com --role roles/bigquery.dataViewer
+    ```
+
+    Then proceed to the next step. Not recommended unless you are using a throw-away project. The drawback of this approach is granting permissions to view all project datasets.
 * Take more granular approach (recommended) by allowing the service account to query one dataset only. This is the approach described below.
 
     Execute the commands:
@@ -146,7 +152,7 @@ Edit the file `./server/.env` and add the project name to it. Then from the repo
     ```
 
     Wait for the message `Starting the backend...` and point your browser to `localhost:3000`. If you used Cloud Shell to build the solution, click on the Web Preview icon instead and change the port accordingly. You should see this page:<br/><br/> ![React application started](docs/screenshots/screenshot1.jpg)
-Click on the "Run query" button. The data fetched by the backend (~10 MB) should be displayed in the table. You can collapse the "Query Options" section by clicking on its header in the top left corner and paginate through the data using the control at the bottom of the page.
+Click on the "Run query" button. The data fetched by the backend should be displayed in the table. You can collapse the "Query Options" section by clicking on its header in the top left corner and paginate through the data using the control at the bottom of the page.
 
     Alternatively submit a more restrictive query with Repository Name set to lowercase 'c'  and uppercase 'C' as the Repository Language (do not type quotes). 
 
@@ -154,11 +160,13 @@ Click on the "Run query" button. The data fetched by the backend (~10 MB) should
 
 ## Usage
 ### Usage Limits
-The daily data usage limits are set to 500 MB for each end-user and 30 GB for the backend, see the [`BigQueryModelConfig`](./server/src/api/models/BigQueryModel.ts) class. You can turn off the backend limit by setting it to a value much higher than expected and use the custom cost control (per user) instead, it applies to service accounts as well. 
+The daily data usage limits are set to 500 MB for each end user and 30 GB for the backend, see the [`BigQueryModelConfig`](./server/src/api/models/BigQueryModel.ts) class. You can turn off the backend limit by setting it to a value much higher than expected and use the custom cost control (per user) instead, it applies to service accounts as well.
 
-The amount of data usage incurred for our GitHub data queries is approximately 4MB for a query with 1 day timeframe. If the query duration is set to 1 week (the maximum that the app allows) then the data usage could be around ~30 MB. Note that in order to reflect BigQuery accounting, the data usage is rounded up to 10 MB. 
+The amount of data usage incurred for our GitHub data queries is approximately 4MB for a query with 1 day timeframe. If the query duration is set to 1 week (the maximum that the app allows) then the data usage could be proportionately higher. Note that in order to reflect BigQuery accounting, the usage is rounded up to 10 MB.
 
-When a user paginates through data in forward direction, each pagination step to the page suggested by the "More data available" message results in one request. Paginating backwards and forwards to the previously fetched pages merely retrieves the data from the local cache.
+>Repeating queries could use BigQuery cache and have zero data usage. In fact that is what happens to the usage limit test. It sets the limit low expecting to hit this restriction after few pagination steps. When the test runs in a sequence with other tests it fails because the limit is not reached due to BigQuery reporting back to the backend zero data usage caused by the cache hit. The test disables BigQuery cache in order for it to succeed.
+
+When a user paginates through data in forward direction, each pagination step to the page suggested by the "More data available" message results in one request. Paginating backwards and forwards to the previously fetched pages retrieves the data from the app cache.
 
 ### How to Run, Debug, Test and Lint
 The recommended ways of running the frontend and the backend (in development and production), testing, debugging and linting are adopted from [Crisp React](https://github.com/winwiz1/crisp-react/) boilerplate. The solution was created from this boilerplate by executing the following commands:
@@ -181,7 +189,7 @@ Switching to a non-demo dataset presents security challenges. Addressing those i
 - Put Express backend behind a proxy (specifically hardened to be exposed to Internet via a firewall) e.g. Nginx. Configure Nginx to host a WAF.
 - Address the Known Limitations below.
 - Setup custom cost control for BigQuery.
-- Implement robust user authentication (multi-factor and/or other advanced form depending on your security requirements).
+- Implement robust user authentication (multi-factor and/or other advanced form depending on your security requirements). The limit on data usage should be tied to the end user identity instead of the client's address.
 
 ## Known Limitations
 1. The implementation of data usage limits is meant to be augmented by adding a persistent storage support. In the current implementation the data usage counters are kept in memory and the counter values are lost when the backend restarts. It makes the current data usage control not useful in cases when the backend is frequently restarted. For example, when it is containerised and deployed to a Kubernetes cluster where pods can be short-lived and restarted very frequently, especially if there is a problem with the run-time environment like a memory pressure.
@@ -192,9 +200,9 @@ Switching to a non-demo dataset presents security challenges. Addressing those i
 
     Another issue, though less critical, is that the data usage counters are reset not at midnight but after 24 hours since counter creation.
 
-2. BigQuery imposes a limit on the number of concurrent interactive queries per project. The limit is set to 100 concurrent queries and can be changed upon request. The backend can potentially hit this limit depending on the number of end-users and backend instances. The current implementation will return an error straight away.
+2. BigQuery imposes a limit on the number of concurrent interactive queries per project. The limit is set to 100 concurrent queries and can be changed upon request. The backend can potentially hit this limit depending on the number of end users and backend instances. The current implementation will return an error straight away.
 
-3. All data received from the backend is cached by the app and there is a limit of 30 cached pages of data. This effectively limits the pagination to 30 pagination requests per query. Once this limit is reached, the end-user will receive an error message. In this case the user can either paginate backwards or submit a new query which clears the cache.
+3. All data received from the backend is cached by the app and there is a limit of 30 cached pages of data. This effectively limits the pagination to 30 pagination requests per query. Once this limit is reached, the end user will receive an error message. In this case the user can either paginate backwards or submit a new query which clears the cache.
 
 ## License
 Crisp BigQuery is open source software [licensed as MIT](./LICENSE).
