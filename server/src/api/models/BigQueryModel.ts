@@ -109,12 +109,10 @@ export class BigQueryModel implements IBigQueryFetcher {
     this.deduplicateRetrieval(bqRequest.DeduplicationTimeDiff);
   }
 
-  // getter is not mockable
   get Data(): BigQueryRetrieval {
     return this.m_queryResult;
   }
 
-  // mockable alternative to the getter above
   public getData(): BigQueryRetrieval {
     return this.m_queryResult;
   }
