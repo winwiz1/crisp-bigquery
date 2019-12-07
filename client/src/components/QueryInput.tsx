@@ -85,7 +85,7 @@ export const QueryInput: React.FunctionComponent<IAuditQueryProps> = props => {
   const onCountChange = (_evt: React.ChangeEvent<HTMLInputElement>, data: InputOnChangeData) => {
     const result = Number.parseInt(data.value, 10);
     if (result) {
-      setCount({ value: result, error: !(result > 0 && result <= 1000)});
+      setCount({ value: result, error: !(result > 0 && result <= 2000)});
     } else {
       setCount({ value: 0, error: true});
     }
@@ -284,7 +284,7 @@ export const QueryInput: React.FunctionComponent<IAuditQueryProps> = props => {
                 <Input
                   type="number"
                   min="100"
-                  max="1000"
+                  max="2000"
                   placeholder="100"
                   onChange={onCountChange}
                   label={"rows per page"}
@@ -295,7 +295,7 @@ export const QueryInput: React.FunctionComponent<IAuditQueryProps> = props => {
                 <div className={cssInputFootnote}>
                   Default = 100
                   <br />
-                  Maximum = 1000
+                  Maximum = 2000
                 </div>
               </Segment>
 

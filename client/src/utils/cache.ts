@@ -71,7 +71,7 @@ export class QueryCache {
 
   private readonly m_pages: Array<QueryCachePage> = [];
   private m_rowCount: number = 0;
-  private static readonly s_rowCountLimit = 30000;
+  private static readonly s_rowCountLimit = 100000;
   private static readonly s_errMsgIncompleteJob =
     "Cannot cache response data (incomplete job). Please contact Support.";
 }
