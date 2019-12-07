@@ -36,7 +36,7 @@ describe("Testing BackendRequest with invalid data", () => {
       rowCount: 1,
       startDate: moment().toDate(),
     };
-    const invalidCounts = [0, 1001, 1000000, -1];
+    const invalidCounts = [0, 2001, 1000000, -1];
 
     for (const cnt of invalidCounts) {
       /* tslint:disable:no-unused-expression */

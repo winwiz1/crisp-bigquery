@@ -12,7 +12,7 @@ export interface IBackendRequestData {
    // The end-of-day time (GMT timezone) applies.
    // If missing then defaults to the same day as startDate.
    endDate?: Date;
-   // Support up to 1000 rows.
+   // Support up to 2000 rows.
    readonly rowCount: number;
    // Repository name
    readonly name?: string;
@@ -56,7 +56,7 @@ export class BackendRequest {
          throw new Error("Invalid query timeframe, please contact Support.");
       }
 
-      if (this.requestData.rowCount <= 0 || this.requestData.rowCount > 1000) {
+      if (this.requestData.rowCount <= 0 || this.requestData.rowCount > 2000) {
          // Can only happen if code is incorrectly modified
          throw new RangeError("Invalid rowCount");
       }
