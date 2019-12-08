@@ -7,7 +7,6 @@ export enum ActionTypes {
   FetchStart = "FetchStart",
   FetchEnd = "FetchEnd",
   SetPage = "SetPage",
-  SetCount = "SetCount",
 }
 
 /*
@@ -24,10 +23,6 @@ interface IActionFetchEnd extends Action<typeof ActionTypes.FetchEnd> {
 
 interface IActionSetPage extends Action<typeof ActionTypes.SetPage> {
   readonly currentPage: number;
-}
-
-interface IActionSetCount extends Action<typeof ActionTypes.SetCount> {
-  readonly pageCount: number;
 }
 
 const actionFetchStartCreator = (): IActionFetchStart => {
@@ -58,24 +53,14 @@ const actionSetPageCreator = (
   };
 };
 
-const actionSetCountCreator = (
-  count: number): IActionSetCount => {
-  return {
-    pageCount: count,
-    type: ActionTypes.SetCount,
-  };
-};
-
 export type AllActions =
   | IActionFetchStart
   | IActionFetchEnd
-  | IActionSetPage
-  | IActionSetCount;
+  | IActionSetPage;
 
 export const actionCreators = {
   actionFetchEnd:   actionFetchEndCreator,
   actionFetchStart: actionFetchStartCreator,
-  actionSetCount:   actionSetCountCreator,
   actionSetPage:    actionSetPageCreator,
 };
 

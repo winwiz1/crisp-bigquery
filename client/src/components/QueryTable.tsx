@@ -14,7 +14,7 @@ import {
   Icon,
   SemanticWIDTHS
 } from "semantic-ui-react";
-import { QueryCachePage } from "../utils/cache";
+import { QueryCache, QueryCachePage } from "../utils/cache";
 import {
   QueryPaginationContainer,
   IQueryPaginationContainerProps
@@ -90,7 +90,7 @@ const columns: ReadonlyArray<IColumn> = [
     collapsing: true,
   },
 ];
- /* tslint:enable:object-literal-sort-keys */
+/* tslint:enable:object-literal-sort-keys */
 
 // Filtered columns that need to be rendered by QueryTable
 const filteredColumns = columns.filter(column => column.visible);
@@ -223,7 +223,8 @@ const cssPopupRow = style({
 
 // The shape of QueryTable properties
 interface IQueryTableProp {
-  dataPage?: QueryCachePage;
+  currentPage: number;
+  cache: QueryCache;
   err?: Error;
   className: string;
   clearError: () => void;
@@ -233,39 +234,48 @@ interface IQueryTableProp {
   QueryTable implementation
 */
 export const QueryTable: React.FunctionComponent<IQueryTableProp> = props => {
-  const noPage = !props.dataPage;
-  const noDataFound = !!props.dataPage && props.dataPage.data.length === 0;
+  const noCurrentPage = props.cache.getPageCount() === 0;
+  const noDataFound = !noCurrentPage && props.cache.getRowCount() === 0;
+  const dataPage = props.cache.getPage(props.currentPage);
+  const scrollAid = !noCurrentPage && dataPage!.data.length > 10;
+  const bottomRef = React.useRef<HTMLDivElement>(null);
+  const scrollToBottom = () => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+  const topRef = React.useRef<HTMLDivElement>(null);
+  const scrollToTop = () => {
+    topRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   // Properties for QueryPaginationContainer
   const paginationProps: IQueryPaginationContainerProps = {
     status: {
+      cache: props.cache,
       clearError: props.clearError,
-      dataPage: props.dataPage,
+      currentPage: props.currentPage,
       err: props.err,
+      scroll: scrollToTop,
     }
-  };
-
-  const bottomRef = React.useRef<HTMLDivElement>(null);
-  const scrollToBottom = () => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   return (
     <section className={props.className}>
       <div className={cssHeading}>
         Query Data
-        <div className={cssHeadingCurrentPage}>
-          <Label as="a" size="large" horizontal onClick={scrollToBottom}>
-          <Icon name="arrow down" />
-            Scroll to the bottom
-          </Label>
+        <div className={cssHeadingCurrentPage} ref={topRef}>
+          { scrollAid &&
+            <Label as="a" size="large" horizontal onClick={scrollToBottom}>
+              <Icon name="arrow down" />
+              Scroll to the bottom
+            </Label>
+          }
           &nbsp;
           <Popup
             wide
-            disabled={noPage}
+            disabled={noCurrentPage}
             trigger={
               <span>
-                Page {props.dataPage ? props.dataPage.index + 1 : 1}
+                Page {dataPage ? dataPage.index + 1 : 1}
               </span>
             }
           >
@@ -279,7 +289,7 @@ export const QueryTable: React.FunctionComponent<IQueryTableProp> = props => {
                     Produced by query
                   </Grid.Column>
                   <Grid.Column width={4} textAlign="center" floated="right">
-                    {noPage ? 0 : props.dataPage!.totalRows}
+                    {noCurrentPage ? 0 : dataPage!.totalRows}
                   </Grid.Column>
                 </Grid.Row>
                 <Grid.Row className={cssPopupRow}>
@@ -287,7 +297,7 @@ export const QueryTable: React.FunctionComponent<IQueryTableProp> = props => {
                     Sent for this page
                   </Grid.Column>
                   <Grid.Column width={4} textAlign="center" floated="right">
-                    {noPage ? 0 : props.dataPage!.rows}
+                    {noCurrentPage ? 0 : dataPage!.rows}
                   </Grid.Column>
                 </Grid.Row>
                 <Grid.Row className={cssPopupRow}>
@@ -295,7 +305,7 @@ export const QueryTable: React.FunctionComponent<IQueryTableProp> = props => {
                     Eliminated by deduplication
                   </Grid.Column>
                   <Grid.Column width={4} textAlign="center" floated="right">
-                    {noPage ? 0 : (props.dataPage!.rows - props.dataPage!.data.length)}
+                    {noCurrentPage ? 0 : (dataPage!.rows - dataPage!.data.length)}
                   </Grid.Column>
                 </Grid.Row>
                 <Grid.Row className={cssPopupRow}>
@@ -303,7 +313,7 @@ export const QueryTable: React.FunctionComponent<IQueryTableProp> = props => {
                     Shown
                   </Grid.Column>
                   <Grid.Column width={4} textAlign="center" floated="right">
-                    {noPage ? 0 : props.dataPage!.data.length}
+                    {noCurrentPage ? 0 : dataPage!.data.length}
                   </Grid.Column>
                 </Grid.Row>
               </Grid>
@@ -318,16 +328,16 @@ export const QueryTable: React.FunctionComponent<IQueryTableProp> = props => {
           </Table.Row>
         </Table.Header>
         <Table.Body>
-          {(noPage || noDataFound) ? (
+          {(noCurrentPage || noDataFound) ? (
             <Table.Row>
               <TableCellNoData
                 colSpan={filteredColumns.length}
-                noPage={noPage}
+                noPage={noCurrentPage}
                 noDataFound={noDataFound}
               />
             </Table.Row>
           ) : (
-              tableRows(props.dataPage!.data)
+              tableRows(dataPage!.data)
             )
           }
         </Table.Body>

@@ -60,6 +60,10 @@ export class QueryCache {
     return this.m_pages.length;
   }
 
+  public readonly getRowCount = (): number => {
+    return this.m_rowCount;
+  }
+
   public readonly clear = () => {
     this.m_pages.length = 0;
     this.m_rowCount = 0;

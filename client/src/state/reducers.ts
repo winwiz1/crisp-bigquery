@@ -23,19 +23,12 @@ const fetchReducer: Reducer<IFetchState, AllActions> =
         return {
           currentPage: action.currentPage || state.currentPage,
           inFlight: false,
-          pageCount: action.pageCount || state.pageCount
         };
       }
       case ActionTypes.SetPage: {
         return {
           ...state,
           currentPage: action.currentPage
-        };
-      }
-      case ActionTypes.SetCount: {
-        return {
-          ...state,
-          pageCount: action.pageCount
         };
       }
       default: {
