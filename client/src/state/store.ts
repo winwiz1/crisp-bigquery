@@ -11,8 +11,6 @@ export interface IFetchState {
   inFlight: boolean;
   // Current cache page
   currentPage: number;
-  // Currently known count of cache pages
-  pageCount: number;
 }
 
 // Slice of state tree reserved for future
@@ -22,8 +20,7 @@ export interface IOtherState {
 // The initial object for the fetch slice of the state tree
 export const initialFetchState: IFetchState = {
   currentPage: 0,
-  inFlight: false,
-  pageCount: 0
+  inFlight: false
 };
 
 // The initial object for the other slice of the state tree

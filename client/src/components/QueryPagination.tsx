@@ -5,8 +5,9 @@ import * as React from "react";
 import { style } from "typestyle";
 import {
   Icon,
+  Label,
   Pagination as SemanticPagination,
-  PaginationProps as SemanticPaginationProps
+  PaginationProps as SemanticPaginationProps,
 } from "semantic-ui-react";
 import { IFetchState } from "../state/store";
 import { actionCreators } from "../state/actions";
@@ -57,8 +58,11 @@ const cssPagination = style({
   QueryPagination component
 */
 export const QueryPagination = (props: QueryPaginationProps) => {
-  const disabled = props.fetch.pageCount === 0;
-
+  const pageCount = props.status.cache.getPageCount();
+  const disabled = pageCount === 0;
+  const dataPage = props.status.cache.getPage(props.status.currentPage);
+  const moreData = !!props.status.cache.getLastPage()?.token && !props.status.err;
+  const scrollAid = pageCount > 0 && dataPage!.rows > 10;
   const onPageChange = (_evt: React.MouseEvent<HTMLAnchorElement>, data: SemanticPaginationProps): void => {
     data.activePage && props.actions.actionSetPage(data.activePage as number - 1);
   };
@@ -66,9 +70,16 @@ export const QueryPagination = (props: QueryPaginationProps) => {
   return (
     <div className={cssFlexContainer}>
       <section className={cssStatus}>
-        <QueryStatus status={{...props.status, pageCnt: props.fetch.pageCount}} />
+        <QueryStatus status={{...props.status}} />
       </section >
       <nav className={cssPagination}>
+        { scrollAid && 
+          <Label as="a" size="large" horizontal onClick={props.status.scroll}>
+            <Icon name="arrow up" />
+            Scroll to the top
+          </Label>
+        }
+        &nbsp;
         <SemanticPagination
           disabled={disabled}
           defaultActivePage={disabled ? 0 : props.fetch.currentPage + 1}
@@ -77,7 +88,7 @@ export const QueryPagination = (props: QueryPaginationProps) => {
           lastItem={null}
           prevItem={{ content: <Icon name="angle left" />, icon: true }}
           nextItem={{ content: <Icon name="angle right" />, icon: true }}
-          totalPages={props.fetch.pageCount}
+          totalPages={moreData? pageCount + 1 : pageCount}
           size="mini"
           onPageChange={onPageChange}
         />

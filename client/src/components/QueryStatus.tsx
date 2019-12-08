@@ -1,15 +1,16 @@
 import * as React from "react";
 import { style, media } from "typestyle";
 import { Message } from "semantic-ui-react";
-import { QueryCachePage } from "../utils/cache";
+import { QueryCache } from "../utils/cache";
 import logger from "../utils/logger";
 
 export interface IQueryStatusProps {
   status: {
-    pageCnt?: number
-    dataPage?: QueryCachePage
+    currentPage: number;
+    cache: QueryCache;
     err?: Error
     clearError: () => void
+    scroll: () => void
   };
 }
 
@@ -22,10 +23,12 @@ const cssMaxWidth = style(
 );
 
 export const QueryStatus: React.FunctionComponent<IQueryStatusProps> = props => {
-  const moreData = !!props.status.dataPage?.token && !props.status.err;
+  const pageCnt = props.status.cache.getPageCount();
+  const moreData = !!props.status.cache.getLastPage()?.token && !props.status.err;
+  const hasData = props.status.cache.getRowCount() > 0;
+  const finished = !moreData && hasData;
   let header: string | undefined;
   let message: string | undefined;
-  let queryFinished = false;
 
   if (props.status.err) {
     header = "Error";
@@ -33,11 +36,10 @@ export const QueryStatus: React.FunctionComponent<IQueryStatusProps> = props => 
     message = `Time: ${errTime} Description: ${props.status.err.message}`;
   } else if (moreData) {
     header = "More data available";
-    message = `Switch to the page ${props.status.pageCnt ?? (props.status.dataPage!.index + 2)} to request it.`;
-  } else if (!moreData && (props.status.pageCnt ?? 0) > 0 && (props.status.dataPage?.data.length ?? 0) > 0 ) {
+    message = `Switch to the page ${pageCnt + 1} to request it.`;
+  } else if (finished) {
     header = "Query finished";
     message = "All query data has been received";
-    queryFinished = true;
   }
 
   const statusData = {
@@ -45,7 +47,7 @@ export const QueryStatus: React.FunctionComponent<IQueryStatusProps> = props => 
     header,
     message,
     moreData,
-    queryFinished
+    queryFinished: finished
   };
 
   const bothFlagsSet = statusData.moreData && statusData.queryFinished;

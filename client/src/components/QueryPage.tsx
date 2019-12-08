@@ -145,7 +145,8 @@ export class QueryPage extends React.Component<QueryPageProps, QueryPageState> {
             className={QueryPage.s_cssQueryInput}
           />
           <QueryTable
-            dataPage={this.m_cache.getPage(currentPage)}
+            currentPage={currentPage}
+            cache={this.m_cache}
             err={this.state.error}
             className={QueryPage.s_cssQueryTable}
             clearError={this.clearError}
@@ -175,7 +176,6 @@ export class QueryPage extends React.Component<QueryPageProps, QueryPageState> {
       this.clearError();
       this.m_cache.clear();
       this.setState(state => ({ ...state, lastRequest: undefined }));
-      this.props.actions.actionSetCount(0);
       this.props.actions.actionSetPage(0);
     }
 
