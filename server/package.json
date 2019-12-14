@@ -38,14 +38,14 @@
     "run:prod": "echo-cli Starting the backend... && cross-env NODE_ENV=production node -r dotenv/config ./build/srv/main.js"
   },
   "dependencies": {
-    "@google-cloud/bigquery": "^4.4.0",
+    "@google-cloud/bigquery": "^4.5.0",
     "dotenv": "^8.2.0",
     "express": "4.17.1",
     "express-static-gzip": "^2.0.5",
     "helmet": "^3.21.2",
     "http-proxy-middleware": "^0.20.0",
     "moment": "^2.24.0",
-    "node-cache": "^5.0.2",
+    "node-cache": "^5.1.0",
     "node-fetch": "^2.6.0",
     "winston": "3.2.1"
   },
@@ -55,9 +55,9 @@
     "@types/http-proxy-middleware": "^0.19.3",
     "@types/jest": "24.0.23",
     "@types/moment": "^2.13.0",
-    "@types/node": "12.12.8",
+    "@types/node": "12.12.17",
     "@types/node-cache": "^4.2.5",
-    "@types/node-fetch": "2.5.3",
+    "@types/node-fetch": "2.5.4",
     "@types/supertest": "^2.0.8",
     "@types/winston": "^2.4.4",
     "copyfiles": "^2.1.1",
@@ -67,9 +67,9 @@
     "mkdirp": "^0.5.1",
     "rimraf": "^3.0.0",
     "supertest": "^4.0.2",
-    "ts-jest": "24.1.0",
+    "ts-jest": "24.2.0",
     "tslib": "1.10.0",
     "tslint": "5.20.1",
-    "typescript": "3.7.2"
+    "typescript": "3.7.3"
   }
 }
