@@ -22,3 +22,21 @@ export class CustomError extends Error {
     logger.error(errStr);
   }
 }
+
+/*
+  Utility function used for error handling.
+*/
+export function domErrorToString(err: DOMError | undefined): string {
+  return !!err ?
+    `Error: ${err.name}, description: ${err.toString?.() || "<no description>"}` :
+    "No error details available";
+}
+
+/*
+  Utility function used for error handling.
+*/
+export function domExceptionToString(ex: DOMException | undefined): string {
+  return !!ex ?
+    `Exception: ${ex.code}, description: ${ex.message || "<no description>"}` :
+    "No exception details available";
+}

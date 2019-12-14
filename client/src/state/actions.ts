@@ -36,12 +36,10 @@ const actionFetchStartCreator = (): IActionFetchStart => {
 */
 
 const actionFetchEndCreator = (
-  page: number | undefined = undefined,
-  count: number | undefined = undefined): IActionFetchEnd => {
+  page: number | undefined = undefined): IActionFetchEnd => {
   return {
     type: ActionTypes.FetchEnd,
     ...(page && { currentPage: page }),
-    ...(count && { pageCount: count }),
   };
 };
 

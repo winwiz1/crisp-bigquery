@@ -21,7 +21,7 @@ import "react-day-picker/lib/style.css";
 import { IBackendRequestData, BackendRequest } from "../api/BackendRequest";
 import { BackendManager} from "../api/BackendManager";
 
-//#region Styles used by QueryInput
+//#region Styles
 
 const cssAccordionHeader = style({
   display: "inline-block",

@@ -22,8 +22,10 @@
     "member-ordering": false,
     "no-empty-interface": false,
     "jsx-boolean-value": false,
+    "interface-name" : false,
     "interface-over-type-literal": false,
-    "max-classes-per-file": [true, 2]
+    "max-classes-per-file": [true, 2],
+    "jsx-wrap-multiline": false
   },
   "rulesDirectory": []
 }

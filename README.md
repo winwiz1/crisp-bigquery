@@ -19,8 +19,9 @@ Full stack starter solution that delivers Google BigQuery data to your browser. 
 The solution can be helpful under the following circumstances:
 1. Data access.<br/> Suppose you need to make BigQuery data available to a team of analysts/researchers/statisticians who rely on you to write SQL statement(s). You implement it as a parameterised query (or queries) and hardcode into the backend. The team retrieves data by providing optional search criteria and feeds it into the toolset of their choice.
 2. Presentation.<br/>You can embed BigQuery data into an existing website. Implement charts, dashboards etc. This scenario assumes the initial data-fetching delay of few seconds is acceptable. Pagination through the data fetched by already submitted query typically results in less than a second delays though your mileage can vary.
-3. Security.<br/>Authenticate users by adding [PassportJS](http://www.passportjs.org/docs/downloads/html/) or other popular library using local user credential storage or industry-standard authentication schemes. Once a user has been authenticated and their personal or group identity established, optionally make authorization decisions to select which query can be accessed by this identity.
-4. Volume of data.<br/>The solution can be extended to automatically fetch up to 100,000 rows of data. E.g. 50 pages of data 2000 rows each. Out of the box this is supported through manual pagination. It can be automated with data injected into the running instance of an application meant to consume BigQuery data e.g. Excel or some statistical package etc. For comparison, currently (December 2019) both the connector for Google Sheets and Google connector for Excel have 10,000 rows limitation on data transfer.
+3. Security.<br/>Authenticate users by adding [PassportJS](http://www.passportjs.org/docs/downloads/html/) or other popular library using local user credential storage or industry-standard authentication schemes. Once a user has been authenticated and their personal or group identity established, optionally make authorization decisions to select which query can be accessed by this identity.<br/>In another scenario only few members of DevOps team would have unrestricted access to BigQuery with others getting curated access via a parameterised query to satisfy security restrictions and/or cost concerns related to running arbitrary queries over petabyte-scale databases.
+4. Volume of data.<br/>The solution can be extended to automatically fetch up to 100,000 rows of data. E.g. 50 pages of data 2000 rows each. For comparison, currently (December 2019) both the connector for Google Sheets and Google connector for Excel have 10,000 rows limitation on data transfer.
+5. Data export.<br/>Export the fetched data into a CSV file. Then import into Excel or a statistical package of your choice.
 
 All those scenarios will require some amount of programming (see [Using Another Dataset](#using-another-dataset)) to tailor the solution to your needs. However the effort and time required will be significantly less in comparison with the case when a custom website is created from scratch.
 
@@ -221,5 +222,6 @@ Switching to a non-demo dataset presents security challenges. Addressing those i
 
 3. All data received from the backend is cached by the app and there is a limit of 50 cached pages of data. This effectively limits the pagination to 50 pagination requests per query. Once this limit is reached, the end user will receive an error message. In this case the user can either paginate backwards or submit a new query which clears the cache.
 
+4. Export to CSV file is available for Chrome only.
 ## License
 Crisp BigQuery is open source software [licensed as MIT](./LICENSE).

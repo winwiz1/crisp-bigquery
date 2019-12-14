@@ -5,7 +5,7 @@
 import { combineReducers, createStore } from "redux";
 import { allReducers } from "./reducers";
 
-// Slice of state tree reserved for data fetching from the server
+// Slice of state tree related to data fetching from the server
 export interface IFetchState {
   // If 'true' then backend data request is inflight
   inFlight: boolean;

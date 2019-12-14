@@ -38,6 +38,7 @@
     "copy": "copyfiles -f dist/* ../server/build/client/"
   },
   "dependencies": {
+    "d3-dsv": "^1.2.0",
     "debug": "^4.1.1",
     "moment": "^2.24.0",
     "react": "16.12.0",
@@ -53,7 +54,9 @@
   "devDependencies": {
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.3.2",
+    "@types/d3-dsv": "^1.0.36",
     "@types/debug": "^4.1.5",
+    "@types/filesystem": "^0.0.29",
     "@types/jest": "^24.0.23",
     "@types/react": "^16.9.11",
     "@types/react-day-picker": "^5.3.0",

@@ -34,10 +34,10 @@
     "skipLibCheck": true,
     "strictNullChecks": true,
     "suppressImplicitAnyIndexErrors": false,
-    "removeComments": true,
+    "removeComments": false,
     "typeRoots": [
       "./node_modules/@types"
     ],
-    "esModuleInterop": false      
+    "esModuleInterop": false     
   }
 }

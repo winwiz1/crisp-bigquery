@@ -207,9 +207,8 @@ export class QueryPage extends React.Component<QueryPageProps, QueryPageState> {
       }
       // Get new page count
       const cnt = this.m_cache.getPageCount();
-      // Show the cache page data in QueryTable (for new query only), update page count
-      this.props.actions.actionFetchEnd(newQuery ? cnt - 1 : undefined,
-        result.pageToken ? cnt + 1 : cnt);
+      // Show the cache page data in QueryTable (for new query only)
+      this.props.actions.actionFetchEnd(newQuery ? cnt - 1 : undefined);
       newQuery && this.setState(state => ({ ...state, lastRequest: request }));
     } else {
       // Do not update current page and page count

@@ -17,6 +17,7 @@ import {
   IQueryStatusProps,
   QueryStatus
 } from "./QueryStatus";
+import { ExportCsv } from "./ExportCsv";
 
 // This part/slice of PaginationProps contains data supplied by
 // Redux store and related to fetching result.
@@ -73,7 +74,9 @@ export const QueryPagination = (props: QueryPaginationProps) => {
         <QueryStatus status={{...props.status}} />
       </section >
       <nav className={cssPagination}>
-        { scrollAid && 
+        <ExportCsv {...{cache: props.status.cache}} />
+        &nbsp;
+        { scrollAid &&
           <Label as="a" size="large" horizontal onClick={props.status.scroll}>
             <Icon name="arrow up" />
             Scroll to the top
@@ -88,7 +91,7 @@ export const QueryPagination = (props: QueryPaginationProps) => {
           lastItem={null}
           prevItem={{ content: <Icon name="angle left" />, icon: true }}
           nextItem={{ content: <Icon name="angle right" />, icon: true }}
-          totalPages={moreData? pageCount + 1 : pageCount}
+          totalPages={moreData ? pageCount + 1 : pageCount}
           size="mini"
           onPageChange={onPageChange}
         />

@@ -175,7 +175,7 @@ class Server {
   // then returns RegExp similar to:
   //   /^((first)|(second)|(runtime)|(vendor))\.\w{16,32}\.bundle\.js((\.map)|(\.gz)|(\.br))?$/
   private static getClientBuildArtifactsRegex(): RegExp {
-    return new RegExp(`^(${Server.getLandingPages()}|(runtime)|(vendor))\\.\\w{16,32}\\.bundle\\.js((\\.map)|(\\.gz)|(\\.br))?$`);
+    return new RegExp(`^(${Server.getLandingPages()}|(runtime)|(vendor)|(csv))\\.\\w{16,32}\\.bundle\\.js((\\.map)|(\\.gz)|(\\.br))?$`);
   }
 
   private readonly m_app: express.Application;
