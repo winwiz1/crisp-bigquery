@@ -20,6 +20,7 @@ import {
   IQueryPaginationContainerProps
 } from "./QueryPaginationContainer";
 import { BigQueryRetrievalRow } from "../api/BackendManager";
+import logger from "../utils/logger";
 
 // A column that QueryTable can render.
 interface IColumn {
@@ -168,8 +169,9 @@ const headerCells = (): ReadonlyArray<JSX.Element> => {
 */
 const tableRows = (data: QueryCachePage["data"] | undefined): ReadonlyArray<JSX.Element> => {
   const rows: Array<JSX.Element> = [];
-
+  
   if (data) {
+    logger.info(`Rendering ${data?.length} rows`);
     data.map((row, ind) =>
       rows.push(
         <Table.Row key={ind}>
@@ -228,6 +230,7 @@ interface IQueryTableProp {
   err?: Error;
   className: string;
   clearError: () => void;
+  autoPaginate: () => void;
 }
 
 /*
@@ -237,7 +240,7 @@ export const QueryTable: React.FunctionComponent<IQueryTableProp> = props => {
   const noCurrentPage = props.cache.getPageCount() === 0;
   const noDataFound = !noCurrentPage && props.cache.getRowCount() === 0;
   const dataPage = props.cache.getPage(props.currentPage);
-  const scrollAid = !noCurrentPage && dataPage!.data.length > 10;
+  const scrollDownRequired = !noCurrentPage && dataPage!.data.length > 10;
   const bottomRef = React.useRef<HTMLDivElement>(null);
   const scrollToBottom = () => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -248,22 +251,38 @@ export const QueryTable: React.FunctionComponent<IQueryTableProp> = props => {
   };
 
   // Properties for QueryPaginationContainer
-  const paginationProps: IQueryPaginationContainerProps = {
+  const paginationPropsBottom: IQueryPaginationContainerProps = {
+    render: {
+      autoPaginate: props.autoPaginate,
+      scrollAid: true,
+      scrollFun: scrollToTop,
+    },
     status: {
       cache: props.cache,
       clearError: props.clearError,
       currentPage: props.currentPage,
       err: props.err,
-      scroll: scrollToTop,
     }
   };
+
+  const paginationPropsTop: IQueryPaginationContainerProps = {
+    ...paginationPropsBottom,
+    render: {
+      autoPaginate: props.autoPaginate,
+      scrollAid: false,
+      scrollFun: scrollToTop,
+    }
+  };
+
+  const headerCellsOptimised = React.useMemo(() => headerCells(), []);
+  const tableRowsOptimised = React.useMemo(() => tableRows(dataPage?.data), [dataPage?.data]);
 
   return (
     <section className={props.className}>
       <div className={cssHeading}>
         Query Data
         <div className={cssHeadingCurrentPage} ref={topRef}>
-          { scrollAid &&
+          { scrollDownRequired &&
             <Label as="a" size="large" horizontal onClick={scrollToBottom}>
               <Icon name="arrow down" />
               Scroll to the bottom
@@ -321,10 +340,11 @@ export const QueryTable: React.FunctionComponent<IQueryTableProp> = props => {
           </Popup>
         </div>
       </div>
+      <QueryPaginationContainer {...paginationPropsTop} />
       <Table unstackable celled striped>
         <Table.Header>
           <Table.Row>
-            {headerCells()}
+            {headerCellsOptimised}
           </Table.Row>
         </Table.Header>
         <Table.Body>
@@ -337,12 +357,12 @@ export const QueryTable: React.FunctionComponent<IQueryTableProp> = props => {
               />
             </Table.Row>
           ) : (
-              tableRows(dataPage!.data)
+              tableRowsOptimised
             )
           }
         </Table.Body>
       </Table>
-      <QueryPaginationContainer {...paginationProps} />
+      <QueryPaginationContainer {...paginationPropsBottom} />
       <div
         style={{ float: "left", clear: "left" }}
         ref={bottomRef}

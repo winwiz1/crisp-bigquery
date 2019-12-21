@@ -12,7 +12,8 @@ import { AllActions, actionCreators } from "../state/actions";
 import {
   QueryPagination,
   IQueryFetchProps,
-  IQueryActionProps
+  IQueryActionProps,
+  IPaginationRenderProps
 } from "./QueryPagination";
 import { IQueryStatusProps } from "./QueryStatus";
 
@@ -34,7 +35,7 @@ const mapDispatchToProps: MapDispatchToProps<IQueryActionProps, IQueryPagination
   return ret;
 };
 
-export interface IQueryPaginationContainerProps extends IQueryStatusProps {
+export interface IQueryPaginationContainerProps extends IQueryStatusProps, IPaginationRenderProps {
 }
 
 // Container component that connects QueryPagination to the Redux store

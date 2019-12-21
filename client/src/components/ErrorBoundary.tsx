@@ -85,7 +85,7 @@ class PortalCreator extends React.Component<IPortalCreatorProps, {}> {
   public render() {
     return ReactDOM.createPortal(
       <section className={PortalCreator.s_cssOverlay}>
-        <h3>{this.props.errorHeader}</h3>y
+        <h3>{this.props.errorHeader}</h3>
         <div className="textWrapper">{this.props.errorText}</div>
         <div className="buttonWrapper">
           <button onClick={this.props.onClose}>Close</button>

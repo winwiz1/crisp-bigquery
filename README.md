@@ -19,7 +19,7 @@ Full stack starter solution that delivers Google BigQuery data to your browser. 
 The solution can be helpful under the following circumstances:
 1. Data access.<br/> Suppose you need to make BigQuery data available to a team of analysts/researchers/statisticians who rely on you to write SQL statement(s). You implement it as a parameterised query (or queries) and hardcode into the backend. The team retrieves data by providing optional search criteria and feeds it into the toolset of their choice.
 2. Presentation.<br/>You can embed BigQuery data into an existing website. Implement charts, dashboards etc. This scenario assumes the initial data-fetching delay of few seconds is acceptable. Pagination through the data fetched by already submitted query typically results in less than a second delays though your mileage can vary.
-3. Security.<br/>Authenticate users by adding [PassportJS](http://www.passportjs.org/docs/downloads/html/) or other popular library using local user credential storage or industry-standard authentication schemes. Once a user has been authenticated and their personal or group identity established, optionally make authorization decisions to select which query can be accessed by this identity.<br/>In another scenario only few members of DevOps team would have unrestricted access to BigQuery with others getting curated access via a parameterised query to satisfy security restrictions and/or cost concerns related to running arbitrary queries over petabyte-scale databases.
+3. Security.<br/>Authenticate users by adding [PassportJS](http://www.passportjs.org/docs/downloads/html/) or other popular library using local user credential storage or industry-standard authentication schemes. Once a user has been authenticated and their personal or group identity established, optionally make authorization decisions to select which query can be accessed by this identity.<br/>In another scenario one DevOps team would have unrestricted access to BigQuery with other teams getting curated access via a parameterised query to satisfy security restrictions and/or cost concerns related to running arbitrary queries over petabyte-scale databases.
 4. Volume of data.<br/>The solution can be extended to automatically fetch up to 100,000 rows of data. E.g. 50 pages of data 2000 rows each. For comparison, currently (December 2019) both the connector for Google Sheets and Google connector for Excel have 10,000 rows limitation on data transfer.
 5. Data export.<br/>Export the fetched data into a CSV file. Then import into Excel or a statistical package of your choice.
 
@@ -198,7 +198,9 @@ In order to switch to the dataset of your choice follow the steps:
 
 1. Modify the backend by replacing the string literal that contains SQL statement at the bottom of [`BigQueryModel.ts`](./server/src/api/models/BigQueryModel.ts) file. Note the names of the columns you have chosen to select in the statement. Modify the helper methods that alter the SQL statement to include query parameters.
 2. Modify the client app by changing the `columns` array in the [`QueryTable.tsx`](./client/src/components/QueryTable.tsx) file to include new columns from the previous step.
-    >After both steps are completed, the data selected by the new SQL statement is fetched from BigQuery, serialized by the backend and transmitted to the client app that deserializes and renders it.
+
+>After both steps are completed, the data selected by the new SQL statement is fetched from BigQuery, serialized by the backend and transmitted to the client app that deserializes and renders it.
+
 4. Decide if you want to retain the user's ability to specify search criteria. Then handle the query parameters - either remove it or modify the parameters handling code for both client and backend.
 5. Change UI as required. Consider adding more SPAs to the React application. The benefits of this approach are described in the Crisp React project.
 

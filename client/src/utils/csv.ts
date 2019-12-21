@@ -21,13 +21,13 @@ export class CsvConverter {
   public readonly performConversion = async (): Promise<boolean> => {
     const pageCount = this.config.cache.getPageCount();
 
-    for(let currentPage = 0; currentPage < pageCount; ++currentPage) {
+    for (let currentPage = 0; currentPage < pageCount; ++currentPage) {
       const str = this.convertPage(currentPage);
-      const blob = new Blob([str], { type: 'text/csv' });
-      let ret = await this.config.appendRoutine(blob);
+      const blob = new Blob([str], { type: "text/csv" });
+      const ret = await this.config.appendRoutine(blob);
 
       if (!ret) {
-        logger.error("Data conversion failure due to file appending error.")
+        logger.error("Data conversion failure due to file appending error.");
         return Promise.resolve(false);
       }
 
@@ -43,12 +43,12 @@ export class CsvConverter {
 
     if (!page) {
       // Can only happen if code is incorrectly modified
-      throw new Error("Internal error: no page to convert. Please contact Support.")
+      throw new Error("Internal error: no page to convert. Please contact Support.");
     }
-    
-    const firstRow = ind > 0? [] : CsvConverter.s_columns;
 
-    const ret = d3.csvFormatRows([firstRow].concat(page.data.map(function(d, _i) {
+    const firstRow = ind > 0 ? [] : CsvConverter.s_columns;
+
+    const ret = d3.csvFormatRows([firstRow].concat(page.data.map((d, _i) => {
       return [
         d.DateTime ?? "",
         d.Name ?? "",
@@ -62,10 +62,6 @@ export class CsvConverter {
 
     return ret;
   }
-
-
-
-
 
   private static readonly s_columns = [
     "DateTime",

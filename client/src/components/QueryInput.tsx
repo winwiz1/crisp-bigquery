@@ -6,6 +6,8 @@ import * as moment from "moment";
 import { style, classes } from "typestyle";
 import {
   Button,
+  Checkbox,
+  CheckboxProps,
   Dimmer,
   Divider,
   Icon,
@@ -15,11 +17,12 @@ import {
   Loader,
   Input,
   InputOnChangeData,
+  Popup
 } from "semantic-ui-react";
 import DayPicker, { DayModifiers } from "react-day-picker";
 import "react-day-picker/lib/style.css";
 import { IBackendRequestData, BackendRequest } from "../api/BackendRequest";
-import { BackendManager} from "../api/BackendManager";
+import { BackendManager } from "../api/BackendManager";
 
 //#region Styles
 
@@ -62,14 +65,22 @@ const cssUserFootnote = style({
   overflow: "hidden",
   width: "27ch"
 });
+const cssButtonQuery = style({
+  width: "18ch"
+});
+const cssPaginationCheckbox = style({
+  marginBottom: "0.5em",
+  marginTop: "0.5em",
+});
 
 //#endregion
 
 // The shape of QueryInput properties
 interface IAuditQueryProps {
-    inFlight: boolean;
-    performQuery: (request: IBackendRequestData) => Promise<void>;
-    className: string;
+  inFlight: boolean;
+  autoPaginate: (request: IBackendRequestData) => void;
+  performQuery: (request: IBackendRequestData) => Promise<void>;
+  className: string;
 }
 
 /*
@@ -79,22 +90,24 @@ export const QueryInput: React.FunctionComponent<IAuditQueryProps> = props => {
   const maxQueryDurationDays = BackendRequest.MaxQueryDuration;
   const errMsg = "Unexpected query parameters, please contact Support.";
 
-  // Pagination count
-  const initialCount = { value: 100, error: false};
-  const [count, setCount] = React.useState<typeof initialCount>(initialCount);
-  const onCountChange = (_evt: React.ChangeEvent<HTMLInputElement>, data: InputOnChangeData) => {
+  // Pagination: row count
+  const rowCountDefault = 100;
+  const rowCountMax = 2000;
+  const initialRowCount = { value: rowCountDefault, error: false };
+  const [rowCount, setRowCount] = React.useState<typeof initialRowCount>(initialRowCount);
+  const onRowCountChange = (_evt: React.ChangeEvent<HTMLInputElement>, data: InputOnChangeData) => {
     const result = Number.parseInt(data.value, 10);
     if (result) {
-      setCount({ value: result, error: !(result > 0 && result <= 2000)});
+      setRowCount({ value: result, error: !(result > 0 && result <= rowCountMax) });
     } else {
-      setCount({ value: 0, error: true});
+      setRowCount({ value: 0, error: true });
     }
   };
 
   // The start of query timeframe
   const initialDate = new Date("2012-03-25");
   initialDate.setHours(0, 0, 0, 0);
-  const [startDate, setStartDate] = React.useState<Date|undefined>(initialDate);
+  const [startDate, setStartDate] = React.useState<Date | undefined>(initialDate);
   const handleStartDate = (date: Date, { selected, disabled }: DayModifiers) => {
     if (disabled) {
       return;
@@ -110,7 +123,7 @@ export const QueryInput: React.FunctionComponent<IAuditQueryProps> = props => {
   };
 
   // The end of query timeframe
-  const [endDate, setEndDate] = React.useState<Date|undefined>(initialDate);
+  const [endDate, setEndDate] = React.useState<Date | undefined>(initialDate);
   const handleEndDate = (date: Date, { selected, disabled }: DayModifiers) => {
     if (disabled) {
       return;
@@ -124,13 +137,13 @@ export const QueryInput: React.FunctionComponent<IAuditQueryProps> = props => {
   };
 
   // Filter by repository name
-  const [name, setName] = React.useState<string|undefined>(undefined);
+  const [name, setName] = React.useState<string | undefined>(undefined);
   const onNameChange = (_evt: React.ChangeEvent<HTMLInputElement>, data: InputOnChangeData) => {
     setName(data.value);
   };
 
   // Filter by repository language
-  const [language, setLanguage] = React.useState<string|undefined>(undefined);
+  const [language, setLanguage] = React.useState<string | undefined>(undefined);
   const onLanguageChange = (_evt: React.ChangeEvent<HTMLInputElement>, data: InputOnChangeData) => {
     // console.log(data);
     setLanguage(data.value);
@@ -142,9 +155,16 @@ export const QueryInput: React.FunctionComponent<IAuditQueryProps> = props => {
     setAccordionActive(!accordionActive);
   };
 
+  // Auto-pagination
+  const [autoPaginate, setAutoPaginate] = React.useState(false);
+  const onAutoPaginateChange = (_evt: React.FormEvent<HTMLInputElement>, data: CheckboxProps) => {
+    const result = !!data.checked;
+    setAutoPaginate(result);
+  };
+
   // Helper method to get a request for backend
   const getRequest = (): IBackendRequestData => {
-    if (!startDate || !endDate || count.value === 0 || count.error) {
+    if (!startDate || !endDate || rowCount.value === 0 || rowCount.error) {
       // Can only happen if code is incorrectly modified
       throw TypeError(errMsg);
     }
@@ -152,7 +172,7 @@ export const QueryInput: React.FunctionComponent<IAuditQueryProps> = props => {
       endDate,
       language,
       name,
-      rowCount: count.value,
+      rowCount: rowCount.value,
       startDate
     };
   };
@@ -160,29 +180,43 @@ export const QueryInput: React.FunctionComponent<IAuditQueryProps> = props => {
   // Event handler
   const onQuery = async () => {
     const req = getRequest();
-    await props.performQuery(req);
+
+    if (autoPaginate) {
+      props.autoPaginate(req);
+    } else {
+      await props.performQuery(req);
+    }
   };
 
   // Client side checks to prevent invalid requests
-  function isNameValid(nameToCheck: string|undefined): boolean {
+  function isNameValid(nameToCheck: string | undefined): boolean {
     return !!nameToCheck ? BackendManager.RegexName.test(nameToCheck) : true;
   }
-  function isLanguageValid(languageToCheck: string|undefined): boolean {
+  function isLanguageValid(languageToCheck: string | undefined): boolean {
     return !!languageToCheck ? BackendManager.RegexLanguage.test(languageToCheck) : true;
   }
 
+  const csvBtnTooltip = autoPaginate ?
+    "Open the Auto-pagination dialog to set the desired number of data pages." :
+    "Run new query. Already fetched data (if any) will be discarded.";
+
   return (
     <section className={props.className}>
-        <Accordion>
-          <Accordion.Title active={accordionActive} onClick={handleAccordion}>
-            <Icon name="dropdown" />
-            <div className={cssAccordionHeader}>Query Options</div>
-          </Accordion.Title>
-          <Accordion.Content active={accordionActive}>
-            <Dimmer.Dimmable as={Segment} blurring raised>
-              <Dimmer active={props.inFlight}>
-                <Loader>Loading backend data</Loader>
-              </Dimmer>
+      <Accordion>
+        <Accordion.Title active={accordionActive} onClick={handleAccordion}>
+          <Icon name="dropdown" />
+          <Popup
+            content={"Click to toggle collapse"}
+            trigger={
+              <div className={cssAccordionHeader}>Query Options</div>
+            }
+          />
+        </Accordion.Title>
+        <Accordion.Content active={accordionActive}>
+          <Dimmer.Dimmable as={Segment} blurring raised>
+            <Dimmer active={props.inFlight}>
+              <Loader>Loading backend data</Loader>
+            </Dimmer>
             <section className={cssFlexContainer}>
 
               <Segment basic className={cssFlexItem}>
@@ -193,8 +227,10 @@ export const QueryInput: React.FunctionComponent<IAuditQueryProps> = props => {
                   onDayClick={handleStartDate}
                   selectedDays={startDate}
                   firstDayOfWeek={0}
-                  disabledDays={[{ after: new Date("2012-05-02"),
-                                   before: new Date("2012-03-10") }]}
+                  disabledDays={[{
+                    after: new Date("2012-05-02"),
+                    before: new Date("2012-03-10")
+                  }]}
                   month={startDate ?? initialDate}
                   initialMonth={startDate}
                 />
@@ -206,12 +242,12 @@ export const QueryInput: React.FunctionComponent<IAuditQueryProps> = props => {
                     Clicking again will deselect.
                   </div>
                 ) : (
-                  <div className={cssMarginLeft}>
-                    Please select start date.
+                    <div className={cssMarginLeft}>
+                      Please select start date.
                     <br />
-                    Dates outside the dateset range are grayed/disabled.
+                      Dates outside the dateset range are grayed/disabled.
                   </div>
-                )}
+                  )}
               </Segment>
 
               <Segment basic className={cssFlexItem} disabled={!startDate}>
@@ -237,12 +273,12 @@ export const QueryInput: React.FunctionComponent<IAuditQueryProps> = props => {
                     Clicking again will deselect.
                   </div>
                 ) : (
-                  <div className={cssMarginLeft}>
-                    Please select end date.
+                    <div className={cssMarginLeft}>
+                      Please select end date.
                     <br />
-                    Maximum query duration is 1 week.
+                      Maximum query duration is 1 week.
                   </div>
-                )}
+                  )}
               </Segment>
 
               <Segment compact basic className={cssFlexItem}>
@@ -280,42 +316,62 @@ export const QueryInput: React.FunctionComponent<IAuditQueryProps> = props => {
               </Segment>
 
               <Segment compact basic className={cssFlexItem}>
-                <div className={cssFlexItemHeader}>Paginated Results Table</div>
-                <Input
-                  type="number"
-                  min="100"
-                  max="2000"
-                  placeholder="100"
-                  onChange={onCountChange}
-                  label={"rows per page"}
-                  labelPosition="right"
-                  step="100"
-                  error={count.error}
-                />
-                <div className={cssInputFootnote}>
-                  Default = 100
-                  <br />
-                  Maximum = 2000
+                <div>
+                  <div className={cssFlexItemHeader}>Paginated Results Table</div>
+                  <Input
+                    type="number"
+                    min={rowCountDefault}
+                    max={rowCountMax}
+                    placeholder={rowCountDefault}
+                    onChange={onRowCountChange}
+                    label={"rows per page"}
+                    labelPosition="right"
+                    step={rowCountDefault}
+                    error={rowCount.error}
+                  />
+                  <div className={cssInputFootnote}>
+                    {`Default = ${rowCountDefault}`}
+                    <br />
+                    {`Maximum = ${rowCountMax}`}
+                  </div>
                 </div>
+                &nbsp;
+                <Segment compact>
+                  <div className={cssPaginationCheckbox}>
+                    <Checkbox
+                      checked={autoPaginate}
+                      toggle
+                      label="Auto-paginate"
+                      onChange={onAutoPaginateChange}
+                    />
+                  </div>
+                </Segment>
               </Segment>
 
             </section>
 
-            <Button
-              floated="right"
-              color="blue"
-              disabled={!startDate || !endDate || count.value === 0 ||
-                        count.error || !isNameValid(name) || !isLanguageValid(language)}
-              onClick={onQuery}
-            >
-              <Icon name="cloud download" />
-              Run query
-            </Button>
-
+            <Popup
+              content={csvBtnTooltip}
+              trigger={
+                <Button
+                  className={cssButtonQuery}
+                  floated="right"
+                  color="blue"
+                  disabled={!startDate || !endDate ||
+                    rowCount.value === 0 || rowCount.error ||
+                    !isNameValid(name) || !isLanguageValid(language)
+                  }
+                  onClick={onQuery}
+                >
+                  <Icon name={autoPaginate ? "forward" : "cloud download"} />
+                  {autoPaginate ? "Paginate" : "New query"}
+                </Button>
+              }
+            />
             <Divider hidden clearing fitted />
-            </Dimmer.Dimmable>
-          </Accordion.Content>
-        </Accordion>
+          </Dimmer.Dimmable>
+        </Accordion.Content>
+      </Accordion>
     </section>
   );
 };

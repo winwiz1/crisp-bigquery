@@ -18,6 +18,7 @@ import {
 } from "../utils/typeguards";
 import { IBackendRequestData } from "../api/BackendRequest";
 import { BackendManager, BigQueryRetrievalResult } from "../api/BackendManager";
+import { AutoPaginate } from "./AutoPaginate";
 
 // This part/slice of QueryPageProps contains data provided by Redux store
 export interface IQueryPageProps_dataSlice {
@@ -38,6 +39,7 @@ export type QueryPageProps = IQueryPageProps_dataSlice & IQueryPageProps_actionS
 type QueryPageState = {
   error?: Error
   lastRequest?: IBackendRequestData
+  paginationModalVisible: boolean
 };
 
 /*
@@ -46,7 +48,8 @@ type QueryPageState = {
 export class QueryPage extends React.Component<QueryPageProps, QueryPageState> {
   public readonly state: QueryPageState = {
     error: undefined,
-    lastRequest: undefined
+    lastRequest: undefined,
+    paginationModalVisible: false
   };
 
   //#region Public methods
@@ -90,6 +93,15 @@ export class QueryPage extends React.Component<QueryPageProps, QueryPageState> {
     await this.fetchQueryData(request ?? req, newQuery);
   }
 
+  public readonly openPaginationModal = (req?: IBackendRequestData): void => {
+    this.m_autoPaginationRequest = req;
+    this.setState(state => ({ ...state, paginationModalVisible: true }));
+  }
+
+  public readonly closePaginationModal = (): void => {
+    this.setState(state => ({ ...state, paginationModalVisible: false }));
+  }
+
   public componentWillUnmount() {
     this.m_controller && this.m_controller.abort();
   }
@@ -112,7 +124,9 @@ export class QueryPage extends React.Component<QueryPageProps, QueryPageState> {
   }
 
   public shouldComponentUpdate(nextProps: QueryPageProps, nextState: QueryPageState) {
-    if (this.props.fetch !== nextProps.fetch || this.state.error !== nextState.error) {
+    if (this.props.fetch !== nextProps.fetch ||
+        this.state.error !== nextState.error ||
+        this.state.paginationModalVisible !== nextState.paginationModalVisible) {
       return true;
     }
 
@@ -138,13 +152,22 @@ export class QueryPage extends React.Component<QueryPageProps, QueryPageState> {
     return (
       <>
         <header />
+        <AutoPaginate
+          newQuery={!!this.m_autoPaginationRequest}
+          paginationRequest={this.m_autoPaginationRequest ?? this.state.lastRequest!}
+          cache={this.m_cache}
+          visible={this.state.paginationModalVisible}
+          closeModal={this.closePaginationModal}
+        />
         <main className={classes(QueryPage.s_cssFlexContainer, cssQueryTableCursor)}>
           <QueryInput
+            autoPaginate={this.openPaginationModal}
             inFlight={this.props.fetch.inFlight}
             performQuery={this.performQuery}
             className={QueryPage.s_cssQueryInput}
           />
           <QueryTable
+            autoPaginate={this.openPaginationModal}
             currentPage={currentPage}
             cache={this.m_cache}
             err={this.state.error}
@@ -239,6 +262,7 @@ export class QueryPage extends React.Component<QueryPageProps, QueryPageState> {
 
   private readonly m_cache = new QueryCache();
   private m_controller?: AbortController = undefined;
+  private m_autoPaginationRequest?: IBackendRequestData;
   private static readonly s_timeout = 15000;
   private static readonly s_cssFlexContainer: string = style({
     $debugName: "querymain",

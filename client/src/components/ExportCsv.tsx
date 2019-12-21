@@ -50,6 +50,10 @@ const cssButtonCancel = style({
   marginTop: "0.8em"
 });
 
+const cssButtonTrigger = style({
+  height: "2.5em"
+});
+
 const cssData = style({
   display: "flex"
 });
@@ -57,12 +61,15 @@ const cssData = style({
 const cssDataFetched = style({
   flex: "initial",
   width: "50%"
-
 });
 
 const cssDataAvailable = style({
   flex: "initial",
   width: "30%"
+});
+
+const cssSubHeader = style({
+  wordSpacing: "0.2em"
 });
 
 //#endregion
@@ -304,7 +311,9 @@ export const ExportCsv: React.FunctionComponent<IExportCsvProps> = props => {
                 color="blue"
                 disabled={!FileSystemStorage.Supported}
                 onClick={showModal}
+                className={cssButtonTrigger}
               >
+                <Icon name="share square" />
                 Export as CSV
               </Button>
             }
@@ -332,7 +341,12 @@ export const ExportCsv: React.FunctionComponent<IExportCsvProps> = props => {
             <div className={cssData}>
               <div className={cssDataFetched}>
                 <Form.Group>
-                  <Header sub>Data to be exported</Header>
+                  <Header
+                    sub
+                    className={cssSubHeader}
+                  >
+                      Fetched data to be exported
+                  </Header>
                 </Form.Group>
                 <Form.Group>
                   <Form.Field width="4">
@@ -351,7 +365,12 @@ export const ExportCsv: React.FunctionComponent<IExportCsvProps> = props => {
               </div>
               <div className={cssDataAvailable}>
                 <Form.Group>
-                  <Header sub>Data available on the server</Header>
+                  <Header
+                    sub
+                    className={cssSubHeader}
+                  >
+                    Data available on the server
+                  </Header>
                 </Form.Group>
                 <Form.Group>
                   <Form.Field width="11">
@@ -367,7 +386,12 @@ export const ExportCsv: React.FunctionComponent<IExportCsvProps> = props => {
             <Divider />
 
             <Form.Group>
-              <Header sub>Progress</Header>
+              <Header
+                sub
+                className={cssSubHeader}
+              >
+                Progress
+              </Header>
             </Form.Group>
             <Form.Group>
               <Form.Field width="16">

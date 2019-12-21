@@ -8,9 +8,8 @@ export interface IQueryStatusProps {
   status: {
     currentPage: number;
     cache: QueryCache;
-    err?: Error
-    clearError: () => void
-    scroll: () => void
+    err?: Error;
+    clearError: () => void;
   };
 }
 
