@@ -1,8 +1,8 @@
 /*
-  The implementation of low level doFetch() function.
+  The implementation of low level fetchAdapter() function.
   Provides extended error handling.
 */
-import { isError } from "./typeguards";
+import { isError, isDOMException } from "./typeguards";
 import { CustomError } from "./error";
 
 export interface IFetch {
@@ -59,20 +59,33 @@ export const fetchAdapter = async (props: IFetch) => {
       }
     })
     .catch((err: any) => {
-      let errMsg = props.exceptionMessage ?? "Failed to get data from the backend.";
-      if (isResponseOk === undefined) {
-        errMsg += (props.exceptionExtraMessageNetwork ?? " Please check the Internet connection.");
-        const detailMsg = `Fetch exception for URL ${props.targetPath} likely due to network connectivity`;
-        props.errorHandler(new CustomError(errMsg, detailMsg));
-      } else {
-        let detailMsg: string;
-        if (isError(err)) {
-          detailMsg = `Fetch exception for URL ${props.targetPath}, details: ${err.message ?? "<undefined>"}`;
+      if (isDOMException(err)) {
+        if (err.code === 20 || err.name === "AbortError") {
+          props.errorHandler(new CustomError(
+            "Data retrieval in progress failed due to user initiated cancellation",
+            `Fetch aborted for URL ${props.targetPath}`
+          ));
         } else {
-          const msg = Object.getOwnPropertyNames(err).map(key => `${key}: ${err[key] ?? "no data"}`).join("\n");
-          detailMsg = `Fetch exception for URL ${props.targetPath}, details: ${msg}`;
+          props.errorHandler(new CustomError(
+            `Fetch exception: ${err.message}`,
+            `DOMException for URL ${props.targetPath}: code ${err.code}, name ${err.name}, message ${err.message}`));
         }
-        props.errorHandler(new CustomError(errMsg, detailMsg));
+      } else {
+        let errMsg = props.exceptionMessage ?? "Failed to get data from the backend.";
+        if (isResponseOk === undefined) {
+          errMsg += (props.exceptionExtraMessageNetwork ?? " Please check the Internet connection.");
+          const detailMsg = `Fetch exception for URL ${props.targetPath} likely due to network connectivity`;
+          props.errorHandler(new CustomError(errMsg, detailMsg));
+        } else {
+          let detailMsg: string;
+          if (isError(err)) {
+            detailMsg = `Fetch exception for URL ${props.targetPath}, details: ${err.message ?? "<undefined>"}`;
+          } else {
+            const msg = Object.getOwnPropertyNames(err).map(key => `${key}: ${err[key] ?? "no data"}`).join("\n");
+            detailMsg = `Fetch exception for URL ${props.targetPath}, details: ${msg}`;
+          }
+          props.errorHandler(new CustomError(errMsg, detailMsg));
+        }
       }
     });
 };

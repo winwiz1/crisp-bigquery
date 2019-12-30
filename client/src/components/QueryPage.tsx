@@ -66,31 +66,117 @@ export class QueryPage extends React.Component<QueryPageProps, QueryPageState> {
       }
 
       if (this.m_cache.isOverLimit()) {
-        this.setError(new CustomError(
-          QueryPage.s_errMsgOverlimit_user,
-          QueryPage.s_errMsgOverlimit
-        ));
+        this.setError(QueryPage.getOverlimitError());
         return;
       }
 
-      const lastPage = this.m_cache.getLastPage();
-
-      if (lastPage) {
-        const { job, token } = lastPage;
-
-        if (token) {
-          request = { ...req, jobId: job, pageToken: token };
-        } else {
-          // Can only happen if code is incorrectly modified
-          throw new Error(QueryPage.s_errMsgUnexpectedRequest);
-        }
-      } else {
-        // Can only happen if code is incorrectly modified
-        throw new Error(QueryPage.s_errMsgInternal);
-      }
+      request = QueryPage.augmentRequest(this.m_cache, req);
     }
 
     await this.fetchQueryData(request ?? req, newQuery);
+  }
+
+  public static readonly getOverlimitError = (): CustomError => {
+    return new CustomError(
+      QueryPage.s_errMsgOverlimit_user,
+      QueryPage.s_errMsgOverlimit
+    );
+  }
+
+  public static readonly augmentRequest = (cache: QueryCache, req: IBackendRequestData): IBackendRequestData => {
+    let ret: IBackendRequestData;
+    const lastPage = cache.getLastPage();
+
+    if (lastPage) {
+      const { job, token } = lastPage;
+
+      if (token) {
+        ret = { ...req, jobId: job, pageToken: token };
+      } else {
+        // Can only happen if code is incorrectly modified
+        throw new Error(QueryPage.s_errMsgUnexpectedRequest);
+      }
+    } else {
+      // Can only happen if code is incorrectly modified
+      throw new Error(QueryPage.s_errMsgInternal);
+    }
+
+    return ret;
+  }
+
+  public static readonly resetForNewQuery: (helpers: {
+      actions: typeof actionCreators
+      cache: QueryCache
+      clearError: () => void
+      setLastRequest: (req?: IBackendRequestData) => void
+    }) => void = ({ actions, cache, clearError, setLastRequest }) => {
+    clearError();
+    cache.clear();
+    setLastRequest(undefined);
+    actions.actionSetPage(0);
+  }
+
+  public static readonly fetchOnePage: (helpers: {
+      actions: typeof actionCreators
+      cache: QueryCache
+      clearError: () => void
+      controller: AbortController
+      newQuery: boolean
+      request: IBackendRequestData
+      setError: (err: Error) => void
+      setLastRequest: (req?: IBackendRequestData) => void
+    }) => Promise<boolean> = async ({
+      actions,
+      cache,
+      clearError,
+      controller,
+      newQuery,
+      request,
+      setError,
+      setLastRequest}) => {
+    actions.actionFetchStart();
+    const backendMgr = new BackendManager(controller.signal);
+    const ret: boolean = await Promise.race([
+      backendMgr.fetch(request),
+      new Promise<boolean>(resolve =>
+        setTimeout(resolve, QueryPage.s_timeout, false)
+      )
+    ]);
+
+    const data = ret ? backendMgr.Data :
+      (controller.abort(),
+       new CustomError(QueryPage.s_errMsgTimeout_user, QueryPage.s_errMsgTimeout)
+      );
+
+    if (isBigQueryRetrievalResult(data)) {
+      clearError();
+      const result = data as BigQueryRetrievalResult;
+      // Add the newly fetched data to cache
+      if (!cache.addPage(result)) {
+        // Can only happen if code is incorrectly modified
+        setError(new Error("Fetching while over the cache limit"));
+        return Promise.resolve(false);
+      }
+      // Get new page count
+      const cnt = cache.getPageCount();
+      // Show the cache page data in QueryTable (for new query only)
+      actions.actionFetchEnd(newQuery ? cnt - 1 : undefined);
+      newQuery && setLastRequest(request);
+      return Promise.resolve(true);
+    } else {
+      // Do not update current page and page count
+      actions.actionFetchEnd();
+
+      if (isCustomError(data)) {
+        setError(data as CustomError);
+      } else if (isError(data)) {
+        setError(data as Error);
+      } else {
+        // Can only happen if code is incorrectly modified
+        setError(new TypeError(QueryPage.s_errMsgUnexpected));
+      }
+      return Promise.resolve(false);
+    }
   }
 
   public readonly openPaginationModal = (req?: IBackendRequestData): void => {
@@ -158,6 +244,10 @@ export class QueryPage extends React.Component<QueryPageProps, QueryPageState> {
           cache={this.m_cache}
           visible={this.state.paginationModalVisible}
           closeModal={this.closePaginationModal}
+          setPaginationRequest={this.setLastRequest}
+          clearError={this.clearError}
+          setError={this.setError}
+          actions={this.props.actions}
         />
         <main className={classes(QueryPage.s_cssFlexContainer, cssQueryTableCursor)}>
           <QueryInput
@@ -196,56 +286,28 @@ export class QueryPage extends React.Component<QueryPageProps, QueryPageState> {
     }
 
     if (newQuery) {
-      this.clearError();
-      this.m_cache.clear();
-      this.setState(state => ({ ...state, lastRequest: undefined }));
-      this.props.actions.actionSetPage(0);
+      QueryPage.resetForNewQuery({
+        actions: this.props.actions,
+        cache: this.m_cache,
+        clearError: this.clearError,
+        setLastRequest: this.setLastRequest
+      });
     }
 
-    this.props.actions.actionFetchStart();
     this.m_controller = new AbortController();
-    const backendMgr = new BackendManager(this.m_controller.signal);
 
-    const ret: boolean = await Promise.race([
-      backendMgr.fetch(request),
-      new Promise<boolean>(resolve =>
-        setTimeout(resolve, QueryPage.s_timeout, false)
-      )
-    ]);
+    await QueryPage.fetchOnePage({
+      actions: this.props.actions,
+      cache: this.m_cache,
+      clearError: this.clearError,
+      controller: this.m_controller,
+      newQuery,
+      request,
+      setError: this.setError,
+      setLastRequest: this.setLastRequest
+    });
 
-    const data = ret ? backendMgr.Data :
-      (this.m_controller.abort(),
-       new CustomError(QueryPage.s_errMsgTimeout_user, QueryPage.s_errMsgTimeout)
-      );
     this.m_controller = undefined;
-
-    if (isBigQueryRetrievalResult(data)) {
-      this.clearError();
-      const result = data as BigQueryRetrievalResult;
-      // Add the newly fetched data to cache
-      if (!this.m_cache.addPage(result)) {
-        // Can only happen if code is incorrectly modified
-        this.setError(new Error("Fetching while over the cache limit"));
-        return;
-      }
-      // Get new page count
-      const cnt = this.m_cache.getPageCount();
-      // Show the cache page data in QueryTable (for new query only)
-      this.props.actions.actionFetchEnd(newQuery ? cnt - 1 : undefined);
-      newQuery && this.setState(state => ({ ...state, lastRequest: request }));
-    } else {
-      // Do not update current page and page count
-      this.props.actions.actionFetchEnd();
-
-      if (isCustomError(data)) {
-        this.setError(data as CustomError);
-      } else if (isError(data)) {
-        this.setError(data as Error);
-      } else {
-        // Can only happen if code is incorrectly modified
-        this.setError(new TypeError(QueryPage.s_errMsgUnexpected));
-      }
-    }
   }
 
   private clearError = () => {
@@ -254,6 +316,10 @@ export class QueryPage extends React.Component<QueryPageProps, QueryPageState> {
 
   private setError = (err: Error) => {
     this.setState(state => ({ ...state, error: err }));
+  }
+
+  private setLastRequest = (request?: IBackendRequestData) => {
+    this.setState(state => ({ ...state, lastRequest: request }));
   }
 
   //#endregion
@@ -297,5 +363,6 @@ export class QueryPage extends React.Component<QueryPageProps, QueryPageState> {
   private static readonly s_errMsgOverlimit = "Overlimit fetch rejected";
   private static readonly s_errMsgInternal = "Internal error in QueryPage. Please contact Support";
   private static readonly s_errMsgFetchRejected = "QueryPage: fetch rejected due to an error";
+
   //#endregion
 }

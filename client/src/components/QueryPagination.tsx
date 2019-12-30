@@ -97,7 +97,7 @@ export const QueryPagination = (props: QueryPaginationProps) => {
       </section >
       <nav className={cssPagination}>
         <ExportCsv {...{cache: props.status.cache}} />
-        {props.status.cache.getPageCount() > 0 &&
+        {pageCount > 0 &&
           <Popup
             content={"Fetch additional data pages"}
             trigger={

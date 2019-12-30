@@ -169,7 +169,7 @@ const headerCells = (): ReadonlyArray<JSX.Element> => {
 */
 const tableRows = (data: QueryCachePage["data"] | undefined): ReadonlyArray<JSX.Element> => {
   const rows: Array<JSX.Element> = [];
-  
+
   if (data) {
     logger.info(`Rendering ${data?.length} rows`);
     data.map((row, ind) =>

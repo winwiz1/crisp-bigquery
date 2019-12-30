@@ -1,5 +1,5 @@
 /*
-  Performs auto-pagination and adds the fetched data to the cache.
+  AutoPaginate performs auto-pagination and adds the fetched data to the cache.
 */
 import * as React from "react";
 import { style } from "typestyle";
@@ -18,6 +18,8 @@ import {
 import { IBackendRequestData } from "../api/BackendRequest";
 import { QueryCache } from "../utils/cache";
 import logger from "../utils/logger";
+import { QueryPage } from "./QueryPage";
+import { actionCreators } from "../state/actions";
 
 //#region Styles
 
@@ -36,17 +38,17 @@ const cssModalHeaderIcon = style({
 });
 
 const cssButtonPaginate = style({
+  marginBottom: "0.5em",
   marginLeft: "1em",
   marginRight: "1em",
-  marginTop: "0.8em",
-  marginBottom: "0.5em"
+  marginTop: "0.8em"
 });
 
 const cssButtonCancel = style({
+  marginBottom: "0.5em",
   marginLeft: "1em",
   marginRight: "4em",
-  marginTop: "0.8em",
-  marginBottom: "0.5em"
+  marginTop: "0.8em"
 });
 
 const cssButton = style({
@@ -105,6 +107,10 @@ export interface IAutoPaginateProps {
   cache: QueryCache;
   visible: boolean;
   closeModal: () => void;
+  setPaginationRequest: (req?: IBackendRequestData) => void;
+  clearError: () => void;
+  setError: (err: Error) => void;
+  actions: typeof actionCreators;
 }
 
 /*
@@ -113,10 +119,8 @@ export interface IAutoPaginateProps {
 */
 export const AutoPaginate: React.FunctionComponent<IAutoPaginateProps> = props => {
   if (!props.visible) {
-     return null;
+    return null;
   }
-
-  //#region Data
 
   // Sanity check
   if (!props.paginationRequest?.rowCount) {
@@ -124,82 +128,82 @@ export const AutoPaginate: React.FunctionComponent<IAutoPaginateProps> = props =
     throw new Error("Invalid auto-pagination data. Please contact Support.");
   }
 
+  //#region Data
+
+  // Non-UI data
+
+  const abortController = React.useRef<AbortController | undefined>(undefined);
+  const loopingCount = React.useRef<number | undefined>(undefined);
+  const isNewQuery = React.useRef(props.newQuery);
+  const isPaginating = React.useRef(false);
+
   // Page and row counts
 
   const pageCountRequestedMax = 100;
-  const pageCountRequestedDefault = 10;
+  const pageCountRequestedDefault = 1;
 
-  const [pageCountFetched, setPageCountFetched] =
-    React.useState(props.cache.getPageCount());
-
-  const [rowCountFetched, setRowCountFetched] =
-    React.useState(props.cache.getRowCount());
+  const [pageCountFetched, setPageCountFetched] = React.useState(isNewQuery.current ? 0 : props.cache.getPageCount());
+  const [rowCountFetched, setRowCountFetched] = React.useState(isNewQuery.current ? 0 : props.cache.getRowCount());
 
   const initialPageCount = {
     error: false,
     value: pageCountRequestedDefault
   };
-  const [pageCountRequested, setPageCountRequested] =
-    React.useState<typeof initialPageCount>(initialPageCount);
+  const [pageCountRequested, setPageCountRequested] = React.useState<typeof initialPageCount>(initialPageCount);
 
   const getRowCountRequested = () => pageCountRequested.value * props.paginationRequest.rowCount;
-  const [rowCountRequested, setRowCountRequested] =
-    React.useState(getRowCountRequested());
+  const [rowCountRequested, setRowCountRequested] = React.useState(getRowCountRequested());
 
   const strUnknown = "Unknown";
-  const getRowCountRemaining = () => (props.cache.getPage(0)?.totalRows === undefined) ?
-    strUnknown : (props.cache.getPage(0)!.totalRows - rowCountFetched).toString();
-  const [rowCountRemaining, setRowCountRemaining] =
-    React.useState(getRowCountRemaining());
+  const getRowCountRemaining = () => (isNewQuery.current || props.cache.getPage(0)?.totalRows === undefined) ?
+    strUnknown : (props.cache.getPage(0)!.totalRows - props.cache.getRowCount()).toString();
+  const [rowCountRemaining, setRowCountRemaining] = React.useState(getRowCountRemaining());
 
-  const getPageCountRemaining = () => rowCountRemaining === strUnknown ?
+  const getPageCountRemaining = () => (isNewQuery.current || props.cache.getPage(0)?.totalRows === undefined) ?
     strUnknown : Math.ceil(
-      Number.parseInt(rowCountRemaining, 10) / props.paginationRequest.rowCount
+      (props.cache.getPage(0)!.totalRows - props.cache.getRowCount()) / props.paginationRequest.rowCount
     ).toString();
-  const [pageCountRemaining, setPageCountRemaining] =
-    React.useState(getPageCountRemaining());
+  const [pageCountRemaining, setPageCountRemaining] = React.useState(getPageCountRemaining());
 
   // Other UI fixtures
 
-  const [isNewQuery, setIsNewQuery] = React.useState(props.newQuery);
-  const getBtnPaginateText = () => isNewQuery ? "New query" : "Paginate";
+  const getBtnPaginateText = () => isNewQuery.current ? "New query" : "Paginate";
   const [btnPaginateText, setBtnPaginateText] = React.useState(getBtnPaginateText());
+
   const [statusMessage, setStatusMessage] = React.useState("");
   const [btnPaginateDisabled, setBtnPaginateDisabled] = React.useState(false);
-  const [btnCancelText, setBtnCancelText] = React.useState("Cancel");
+
+  const getBtnCancelText = () => isNewQuery.current ? "Cancel" : "Close";
+  const [btnCancelText, setBtnCancelText] = React.useState(getBtnCancelText());
+
   const [progressError, setProgressError] = React.useState(false);
   const [progressPercent, setProgressPercent] = React.useState(0);
+
   const [inputDisabled, setInputDisabled] = React.useState(false);
-  const abortController = React.useRef<AbortController | undefined>(undefined);
   const inputRef = React.useRef<Input>(null);
   // Run on the first render only hence the empty dependency array
   React.useEffect(() => { inputRef.current?.focus(); }, []);
 
-   //#endregion
+  //#endregion
 
-   //#region Rendering helpers
+  //#region Rendering helpers
 
   const onPageCountChange = (_evt: React.ChangeEvent<HTMLInputElement>, data: InputOnChangeData) => {
     const result = Number.parseInt(data.value, 10);
     let resultValid = !!result && result > 0 && result <= pageCountRequestedMax;
+    const remainingPages = getPageCountRemaining();
 
-    if (pageCountRemaining !== strUnknown && result > Number.parseInt(pageCountRemaining, 10)) {
+    if (remainingPages !== strUnknown && result > Number.parseInt(remainingPages, 10) + 1) {
       resultValid = false;
     }
 
     if (result) {
-      setPageCountRequested({
-        error: !resultValid,
-        value: result
-      });
+      setPageCountRequested({ error: !resultValid, value: result });
       if (resultValid) {
         setRowCountRequested(result * props.paginationRequest.rowCount);
       }
     } else {
-      setPageCountRequested({
-        error: true,
-        value: 0
-      });
+      setPageCountRequested({ error: true, value: 0 });
     }
   };
 
@@ -212,8 +216,21 @@ export const AutoPaginate: React.FunctionComponent<IAutoPaginateProps> = props =
     setDefaults();
   };
 
+  const onPaginate = async () => {
+    await doPaginate();
+  };
+
   const setDefaults = () => {
-    setIsNewQuery(props.newQuery);
+    if (shouldSaveLastRequest()) {
+      props.setPaginationRequest(props.paginationRequest);
+    }
+
+    loopingCount.current = undefined;
+    abortController.current?.abort();
+    abortController.current = undefined;
+    isPaginating.current = false;
+    isNewQuery.current = props.newQuery;
+
     setStatusMessage("");
     setBtnPaginateDisabled(false);
     setBtnCancelText("Cancel");
@@ -221,7 +238,6 @@ export const AutoPaginate: React.FunctionComponent<IAutoPaginateProps> = props =
     setProgressError(false);
     setProgressPercent(0);
     setInputDisabled(false);
-    abortController.current = undefined;
     // page and row counts
     setPageCountFetched(props.cache.getPageCount());
     setRowCountFetched(props.cache.getRowCount());
@@ -241,12 +257,25 @@ export const AutoPaginate: React.FunctionComponent<IAutoPaginateProps> = props =
     } else {
       logger.info(message);
     }
-
-    setBtnPaginateDisabled(inFlight);
-    setBtnPaginateText(error ? "Start" : "Paginate");
-    setBtnCancelText(inFlight ? "Stop" : (error ? "Cancel" : "Close"));
+    isPaginating.current = inFlight;
+    const allDataFetched = !error && !!props.cache.getLastPage() && !props.cache.getLastPage()!.token;
+    setBtnPaginateDisabled(inFlight || allDataFetched);
+    setInputDisabled(inFlight);
+    setBtnPaginateText(getBtnPaginateText());
+    setBtnCancelText(inFlight ? "Stop" : getBtnCancelText());
     setStatusMessage(message);
     setProgressError(error);
+  };
+
+  const handleOverlimit = () => {
+    const err = QueryPage.getOverlimitError();
+    setStatus({
+      error: true,
+      inFlight: false,
+      message: err.message
+    });
+    setBtnPaginateDisabled(true);
+    props.setError(err);
   };
 
   //#endregion
@@ -254,22 +283,91 @@ export const AutoPaginate: React.FunctionComponent<IAutoPaginateProps> = props =
   //#region Pagination functions
 
   const doPaginate = async (): Promise<void> => {
+    if (isNewQuery.current) {
+      QueryPage.resetForNewQuery({
+        actions: props.actions,
+        cache: props.cache,
+        clearError: props.clearError,
+        setLastRequest: props.setPaginationRequest
+      });
+    } else {
+      if (props.cache.isOverLimit()) {
+        handleOverlimit();
+        return Promise.resolve();
+      }
+    }
+
     // Set initial status
-    setProgressPercent(0);
     setStatus({
       error: false,
       inFlight: true,
-      message: "Exporting. Please wait..."
+      message: "Paginating. Please wait..."
     });
 
-    // TODO
-    alert("Not implemented");
+    let req: IBackendRequestData = isNewQuery.current ?
+      props.paginationRequest :
+      QueryPage.augmentRequest(props.cache, props.paginationRequest);
+
+    abortController.current?.abort();
+    abortController.current = new AbortController();
+    let fetchOutcome = false;
+    let errFetch: Error | undefined;
+    const interceptError = (err: Error) => { errFetch = err; props.setError(err); };
+
+    for (let i = loopingCount.current ?? 0; i < pageCountRequested.value;) {
+      fetchOutcome = await QueryPage.fetchOnePage({
+        actions: props.actions,
+        cache: props.cache,
+        clearError: props.clearError,
+        controller: abortController.current,
+        newQuery: isNewQuery.current,
+        request: req,
+        setError: interceptError,
+        setLastRequest: props.setPaginationRequest
+      });
+
+      if (fetchOutcome) {
+        isNewQuery.current = false;
+      } else {
+        break;
+      }
+
+      ++i;
+      loopingCount.current = i;
+      setProgressPercent(Math.floor((i * 100) / pageCountRequested.value));
+
+      if (props.cache.getLastPage()?.token) {
+        req = QueryPage.augmentRequest(props.cache, req);
+      } else {
+        break;
+      }
+    }
+
+    abortController.current = undefined;
+    loopingCount.current = undefined;
+    updateCounts();
+
+    const moreData = !!props.cache.getLastPage()?.token && fetchOutcome;
 
     setStatus({
-      error: false,
+      error: !fetchOutcome,
       inFlight: false,
-      message: "Finished"
+      message: fetchOutcome ?
+        (moreData ? "Finished." : "Finished. All query data has been received.") :
+        `Auto-pagination failed. ${errFetch}`
     });
+    return Promise.resolve();
+  };
+
+  const shouldSaveLastRequest = () => {
+    return props.newQuery && props.cache.getPageCount() > 0;
+  };
+
+  const updateCounts = () => {
+    setPageCountFetched(props.cache.getPageCount());
+    setRowCountFetched(props.cache.getRowCount());
+    setRowCountRemaining(getRowCountRemaining());
+    setPageCountRemaining(getPageCountRemaining());
   };
 
   //#endregion
@@ -370,7 +468,7 @@ export const AutoPaginate: React.FunctionComponent<IAutoPaginateProps> = props =
                   </Header>
                 </Form.Group>
                 <Form.Group>
-                <Form.Field width="7">
+                  <Form.Field width="7">
                     <label>Data pages</label>
                     <Segment size="small">
                       {pageCountRemaining}
@@ -421,11 +519,12 @@ export const AutoPaginate: React.FunctionComponent<IAutoPaginateProps> = props =
                 <Button
                   size="tiny"
                   color="blue"
-                  onClick={doPaginate}
+                  onClick={onPaginate}
                   disabled={btnPaginateDisabled || pageCountRequested.error}
                   className={cssButton}
+                  loading={isPaginating.current}
                 >
-                  <Icon name={isNewQuery ? "cloud download" : "forward"} />
+                  <Icon name={isNewQuery.current ? "cloud download" : "forward"} />
                   {btnPaginateText}
                 </Button>
               </div>
@@ -446,6 +545,6 @@ export const AutoPaginate: React.FunctionComponent<IAutoPaginateProps> = props =
       </Modal>
     </>
   );
-};
 
-//#endregion
+  //#endregion
+};

@@ -19,9 +19,9 @@ Full stack starter solution that delivers Google BigQuery data to your browser. 
 The solution can be helpful under the following circumstances:
 1. Data access.<br/> Suppose you need to make BigQuery data available to a team of analysts/researchers/statisticians who rely on you to write SQL statement(s). You implement it as a parameterised query (or queries) and hardcode into the backend. The team retrieves data by providing optional search criteria and feeds it into the toolset of their choice.
 2. Presentation.<br/>You can embed BigQuery data into an existing website. Implement charts, dashboards etc. This scenario assumes the initial data-fetching delay of few seconds is acceptable. Pagination through the data fetched by already submitted query typically results in less than a second delays though your mileage can vary.
-3. Security.<br/>Authenticate users by adding [PassportJS](http://www.passportjs.org/docs/downloads/html/) or other popular library using local user credential storage or industry-standard authentication schemes. Once a user has been authenticated and their personal or group identity established, optionally make authorization decisions to select which query can be accessed by this identity.<br/>In another scenario one DevOps team would have unrestricted access to BigQuery with other teams getting curated access via a parameterised query to satisfy security restrictions and/or cost concerns related to running arbitrary queries over petabyte-scale databases.
+3. Security.<br/>Authenticate users by adding [PassportJS](http://www.passportjs.org/docs/downloads/html/) or other popular library using local user credential storage or industry-standard authentication schemes. Once a user has been authenticated and their personal or group identity established, optionally make authorization decisions to select which query can be accessed by this identity.<br/>In another scenario the stock export of Stackdriver Logging into BigQuery is used (it works nearly in real-time). One DevOps team would have unrestricted access to BigQuery with other teams getting curated access via a parameterised query to satisfy security restrictions and/or cost concerns related to running arbitrary queries over petabyte-scale databases.
 4. Volume of data.<br/>The solution can be extended to automatically fetch up to 100,000 rows of data. E.g. 50 pages of data 2000 rows each. For comparison, currently (December 2019) both the connector for Google Sheets and Google connector for Excel have 10,000 rows limitation on data transfer.
-5. Data export.<br/>Export the fetched data into a CSV file. Then import into Excel or a statistical package of your choice.
+5. Data export.<br/>Export the fetched data directly into a local CSV file. Then import into Excel or a statistical package of your choice. There is no need to use GCS and provide access to a GCS bucket.
 
 All those scenarios will require some amount of programming (see [Using Another Dataset](#using-another-dataset)) to tailor the solution to your needs. However the effort and time required will be significantly less in comparison with the case when a custom website is created from scratch.
 
@@ -156,7 +156,7 @@ To clone the repository to your workstation or Cloud Shell execute:
     The current directory has now been changed to the root of cloned repository. Copy the file `key.json` created at the previous step to `./key.json`. If the repository was cloned to a workstation, you can use [SSH](https://cloud.google.com/sdk/gcloud/reference/alpha/cloud-shell/ssh) to connect to Cloud Shell or simply copy and paste the content of the file.
 
 9. **Build, test and run the solution.**<br/>
-Edit the file `./server/.env` and add the project name to it. Then from the repository root execute the command:
+Edit the file `./server/.env` and add the GCP project ID to it. Then from the repository root execute the command:
 
     ```
     yarn install && yarn test
@@ -169,7 +169,7 @@ Edit the file `./server/.env` and add the project name to it. Then from the repo
     ```
 
     Wait for the message `Starting the backend...` and point your browser to `localhost:3000`. If you used Cloud Shell to build the solution, click on the Web Preview icon instead and change the port accordingly. You should see this page:<br/><br/> ![React application started](docs/screenshots/screenshot1.jpg)
-Click on the "Run query" button. The data fetched by the backend should be displayed in the table. You can collapse the "Query Options" section by clicking on its header in the top left corner and paginate through the data using the control at the bottom of the page.
+Click on the "New query" button. The data fetched by the backend should be displayed in the table. You can collapse the "Query Options" section by clicking on its header in the top left corner and paginate through the data using the control at the bottom of the page.
 
     Alternatively submit a more restrictive query with lowercase 'c' as the Repository Name pattern and uppercase 'C' as the Repository Language pattern (do not type quotes).
 
@@ -191,7 +191,7 @@ The recommended ways of running the frontend and the backend (in development and
 git clone https://github.com/winwiz1/crisp-react.git
 mv crisp-react crisp-bigquery
 ```
-and editing the SPA configuration file. Accordingly, all the Crisp React [Usage Scenarios](https://winwiz1.github.io/crisp-react/#usage) along with other README sections like [SPA Configuration](https://winwiz1.github.io/crisp-react/#spa-configuration) apply to Crisp BigQuery, subject to minor corrections caused by different SPA names.
+and editing the SPA configuration file. Accordingly, all the Crisp React [Usage Scenarios](https://winwiz1.github.io/crisp-react/#usage) along with other README sections like [SPA Configuration](https://winwiz1.github.io/crisp-react/#spa-configuration) apply to Crisp BigQuery, subject to minor corrections caused by different SPA names. In order to debug the backend using VS Code, edit its configuration file [`launch.json`](./server/.vscode/launch.json) and set the `GCP_PROJECT_ID` environment variable to your GCP project ID.
 
 ## Using Another Dataset
 In order to switch to the dataset of your choice follow the steps:
@@ -222,7 +222,7 @@ Switching to a non-demo dataset presents security challenges. Addressing those i
 
 2. BigQuery imposes a limit on the number of concurrent interactive queries per project. The limit is set to 100 concurrent queries and can be changed upon request. The backend can potentially hit this limit depending on the number of end users and backend instances. The current implementation will return an error straight away.
 
-3. All data received from the backend is cached by the app and there is a limit of 50 cached pages of data. This effectively limits the pagination to 50 pagination requests per query. Once this limit is reached, the end user will receive an error message. In this case the user can either paginate backwards or submit a new query which clears the cache.
+3. All data received from the backend is cached by the app and there is a limit of 200,000 cached rows of data. Once this limit is reached, the end user will receive an error message. In this case the user can either paginate backwards or submit a new query which clears the cache.
 
 4. Export to CSV file is available for Chrome only.
 ## License

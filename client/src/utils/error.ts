@@ -14,7 +14,6 @@ export class CustomError extends Error {
     super(message);
     // www.typescriptlang.org/docs/handbook/release-notes/typescript-2-2.html
     Object.setPrototypeOf(this, new.target.prototype);
-    // Ensure this.Message is not set to null or undefined as it is checked by isCustomError
     this.detailMessage = this.detailMessage ?? "";
 
     let errStr = message;

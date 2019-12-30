@@ -3,14 +3,17 @@ import { BigQueryRetrievalResult } from "../api/BackendManager";
 
 export function isError(err: any): err is Error {
   return !!err &&
-    err instanceof Error &&
-    (err as CustomError).detailMessage === undefined;
+    err instanceof Error && err.constructor !== CustomError;
 }
 
 export function isCustomError(err: any): err is CustomError {
   return !!err &&
-    err instanceof CustomError &&
-    (err as CustomError).detailMessage !== undefined;
+    err.constructor === CustomError;
+}
+
+export function isDOMException(err: any): err is DOMException {
+  return !!err &&
+    err.constructor === DOMException;
 }
 
 export function isBigQueryRetrievalResult(x: any): x is BigQueryRetrievalResult {
