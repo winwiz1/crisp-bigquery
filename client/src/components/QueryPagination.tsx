@@ -134,6 +134,7 @@ export const QueryPagination = (props: QueryPaginationProps) => {
           totalPages={moreData ? pageCount + 1 : pageCount}
           size="mini"
           onPageChange={onPageChange}
+          boundaryRange="2"
         />
       </nav>
     </div>
