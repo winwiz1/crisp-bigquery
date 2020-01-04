@@ -18,7 +18,7 @@ import {
   BigQueryRetrievalRow,
   BigQueryRetrievalResult,
   BigQueryRequest
-} from "../../../server/src/api/types/BigQueryTypes";
+} from "@backend/types/BigQueryTypes";
 
 export {
   BigQueryRetrieval,
