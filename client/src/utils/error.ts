@@ -8,11 +8,11 @@ import logger from "./logger";
 */
 export class CustomError extends Error {
   constructor(
-    readonly message: string,             // error description for end user
+    message: string,                        // error description for end user
     readonly detailMessage?: string
   ) {    // troubleshooting info for Support
     super(message);
-    // www.typescriptlang.org/docs/handbook/release-notes/typescript-2-2.html
+    // http://www.typescriptlang.org/docs/handbook/release-notes/typescript-2-2.html#support-for-newtarget
     Object.setPrototypeOf(this, new.target.prototype);
     this.detailMessage = this.detailMessage ?? "";
 

@@ -1,6 +1,6 @@
 {
   "name": "crisp-bigquery",
-  "version": "1.0.0",
+  "version": "1.1.1",
   "description": "Full stack BigQuery with React and Express in TypeScript",
   "author": "winwiz1 <winwiz@gmail.com> (https://github.com/winwiz1/)",
   "contributors": [
