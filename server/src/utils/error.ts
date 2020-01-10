@@ -10,7 +10,7 @@ import { isTest } from "./misc";
   The class allows to have two different error messages describing the same error.
   On the one hand we would like to log all the error details for troubleshooting,
   auditing etc. On the other hand the error description also needs to be sent to
-  the user. Having two wordings for the same issue al lows to avoid a possible XSS
+  the user. Having two wordings for the same issue allows to avoid a possible XSS
   reflection. The added benefit of this approach is the ability to keep logs
   detailed while sparing the end users from seeing the technical details and
   unfamiliar terminology.
@@ -50,7 +50,7 @@ export class CustomError extends Error {
     this.m_logOnly = val;
   }
 
-  // Unobsured error message, might contain error details reflecting
+  // Unobscured error message, might contain error details reflecting
   // attempted XSS, used for logging
   private m_unobscuredMsg: string | undefined = undefined;
 

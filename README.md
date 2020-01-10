@@ -201,8 +201,8 @@ In order to switch to the dataset of your choice follow the steps:
 
 >After both steps are completed, the data selected by the new SQL statement is fetched from BigQuery, serialized by the backend and transmitted to the client app that deserializes and renders it.
 
-4. Decide if you want to retain the user's ability to specify search criteria. Then handle the query parameters - either remove it or modify the parameters handling code for both client and backend.
-5. Change UI as required. Consider adding more SPAs to the React application. The benefits of this approach are described in the Crisp React project.
+3. Decide if you want to retain the user's ability to specify search criteria. Then handle the query parameters - either remove it or modify the parameters handling code for both client and backend.
+4. Change UI as required. Consider adding more SPAs to the React application. The benefits of this approach are described in the Crisp React project.
 
 Switching to a non-demo dataset presents security challenges. Addressing those is beyond the scope of this README and the solution. However it can be recommended to:
 - Follow Express security [best practices](https://expressjs.com/en/advanced/best-practice-security.html).
@@ -227,3 +227,4 @@ Switching to a non-demo dataset presents security challenges. Addressing those i
 4. Export to CSV file is available for Chrome only.
 ## License
 Crisp BigQuery is open source software [licensed as MIT](./LICENSE).
+
