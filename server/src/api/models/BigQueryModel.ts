@@ -27,11 +27,21 @@ import { PersistentStorageManager } from "../../utils/storage";
 */
 export class BigQueryModelConfig {
   constructor(
-      // Daily limit on BigQuery data usage in MB per client address
-      private limitDailyClientMB = BigQueryModelConfig.s_quotaDailyClientMB,
-      // Daily limit on BigQuery data usage in MB per model instance
-      readonly limitDailyInstanceMB = BigQueryModelConfig.s_quotaDailyInstanceMB,
-      readonly envConfig: EnvVariables = EnvConfig.getVariables()) {
+    // Daily limit on BigQuery data usage in MB per client address
+    private limitDailyClientMB = BigQueryModelConfig.s_quotaDailyClientMB,
+    // Daily limit on BigQuery data usage in MB per model instance
+    private limitDailyInstanceMB = BigQueryModelConfig.s_quotaDailyInstanceMB,
+    // Environment config
+    readonly envConfig: EnvVariables = EnvConfig.getVariables()
+  ) {
+
+    if (limitDailyClientMB <= 0 || limitDailyClientMB > BigQueryModelConfig.s_quotaDailyClientMB) {
+      throw new RangeError("Client data limit is invalid");
+    }
+
+    if (limitDailyInstanceMB <= 0 || limitDailyInstanceMB > BigQueryModelConfig.s_quotaDailyInstanceMB) {
+      throw new RangeError("Instance data limit is invalid");
+    }
   }
 
   public readonly setClientDailyLimit = (limit: number) => {
@@ -48,6 +58,10 @@ export class BigQueryModelConfig {
 
   public readonly getClientDailyLimit = (): number => {
     return this.limitDailyClientMB;
+  }
+
+  public readonly getInstanceDailyLimit = (): number => {
+    return this.limitDailyInstanceMB;
   }
 
   // Default daily quota on BigQuery data usage in MB per client address
@@ -98,7 +112,7 @@ export class BigQueryModel implements IBigQueryFetcher {
       return;
     }
     // Check data usage by the instance of BigQueryModel class
-    if (dataUsage.instance_data > BigQueryModel.s_config!.limitDailyInstanceMB) {
+    if (dataUsage.instance_data > BigQueryModel.s_config!.getInstanceDailyLimit()) {
       const custErr = new CustomError(509, BigQueryModel.s_errLimitInstance, false, false);
       custErr.unobscuredMessage = `Client ${bqRequest.clientAddress} request denied due to backend reaching its daily data limit`;
       this.m_queryResult = custErr;
