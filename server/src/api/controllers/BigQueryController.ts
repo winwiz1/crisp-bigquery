@@ -32,13 +32,13 @@ export class BigQueryController {
             BigQueryController.s_configSet = true;
           }
 
-          const errInfo: JsonParsingError = undefined;
-          const bqRequest = BigQueryRequest.fromJson(req.body, req.ip, true, errInfo);
+          const errInfo: JsonParsingError = { message: undefined };
+          const bqRequest = BigQueryRequest.fromJson(req.body, req.ip, errInfo, true);
 
           if (!bqRequest) {
             const err = new CustomError(400, BigQueryController.s_ErrMsgParams, true);
             err.unobscuredMessage = `Invalid request from ${req.ip} with hostname ${req.hostname} using path ${req.originalUrl}. `;
-            errInfo && (err.unobscuredMessage += errInfo!.message);
+            !!errInfo.message && (err.unobscuredMessage += errInfo.message);
             return next(err);
           }
 

@@ -105,7 +105,7 @@ interface IBigQueryRequest {
   readonly jobId?: string;
 }
 
-export type JsonParsingError = { message: string } | undefined;
+export type JsonParsingError = { message?: string };
 
 /*
   Class BigQueryRequest used to parse and validate a JSON request received from the client.
@@ -118,8 +118,8 @@ export class BigQueryRequest implements IBigQueryRequest {
   static fromJson(
     objJson: any,
     clientAddress: string,
-    useQueryCache = true,
-    _errInfo?: JsonParsingError): BigQueryRequest | undefined {
+    errInfo: JsonParsingError,
+    useQueryCache = true): BigQueryRequest | undefined {
     try {
       const dataJson: IBigQueryRequest = {
         clientAddress: BigQueryRequest.getClientAddress(clientAddress),
@@ -141,7 +141,7 @@ export class BigQueryRequest implements IBigQueryRequest {
         ">"
       );
 
-      _errInfo = { message: `Request parsing failed, error: ${errMsg}` };
+      errInfo.message = `Request parsing failed, error: ${errMsg}`;
       return undefined;
     }
   }

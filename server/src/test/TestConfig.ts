@@ -1,6 +1,6 @@
 import * as moment from "moment";
 import { BigQueryModelConfig } from "../api/models/BigQueryModel";
-import { BigQueryRequest } from "../api/types/BigQueryTypes";
+import { JsonParsingError, BigQueryRequest } from "../api/types/BigQueryTypes";
 
 type TestRequest = {
   startDate: string
@@ -73,7 +73,8 @@ export class TestConfig {
     clientAddress = "10.10.11.12",
     useQueryCache = true): BigQueryRequest | undefined => {
     const ret = TestConfig.getRequestAsJson(req);
-    return ret ? BigQueryRequest.fromJson(ret, clientAddress, useQueryCache) : undefined;
+    const errInfo: JsonParsingError = { message: undefined };
+    return ret ? BigQueryRequest.fromJson(ret, clientAddress, errInfo, useQueryCache) : undefined;
   }
 
   static readonly getModelConfig = (

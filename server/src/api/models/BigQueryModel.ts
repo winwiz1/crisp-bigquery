@@ -357,7 +357,7 @@ export class BigQueryModel implements IBigQueryFetcher {
     ]);
 
     if (!ret) {
-      const errMsg = "BigQueryModel - failed to store data usage in cache";
+      const errMsg = "Failed to store data usage in the cache";
       logger.error({ message: errMsg });
       throw new Error(errMsg);
     }
@@ -425,7 +425,7 @@ export class BigQueryModel implements IBigQueryFetcher {
   private static readonly s_errStale = "Stale backend query";
   private static readonly s_errLaunch = "Failed to launch BigQuery job to perform a query";
   private static readonly s_errLimitClient = "The daily limit of database queries has been reached. Please contact Support if you feel this limit is inadequate.";
-  private static readonly s_errLimitInstance = "Temporary unable to to query the backend database. Please contact Support.";
+  private static readonly s_errLimitInstance = "Temporary unable to query the backend database. Please contact Support.";
   private static readonly s_limitPrefix = "bqlimit_";
   private static readonly s_limitInstance = "bqlimit_instance";
   private static readonly s_JobCleanupInterval = 3600;

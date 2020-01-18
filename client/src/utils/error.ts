@@ -2,7 +2,8 @@ import logger from "./logger";
 
 /*
   This class allows to have two different error messages describing the same error.
-  One user friendly, another detailed. Support can ask a user to copy the latter
+  One user friendly, is meant to be understood by end users. Another detailed and
+  possibly containing technical jargon. Support can ask a user to copy the latter
   from the log (currently browser's JS console) and paste into an email to be sent
   to the Support for further troubleshooting.
 */
