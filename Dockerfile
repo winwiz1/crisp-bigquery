@@ -1,6 +1,8 @@
 FROM node:12.8.1-slim as build
 RUN apt-get update -y && apt-get upgrade -y
 
+WORKDIR /crisp-bigquery/server
+COPY --chown=node:node ./server/ .
 WORKDIR /crisp-bigquery/client
 COPY --chown=node:node ./client/ .
 RUN yarn && yarn build:prod
