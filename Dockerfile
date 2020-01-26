@@ -3,6 +3,7 @@ RUN apt-get update -y && apt-get upgrade -y
 
 WORKDIR /crisp-bigquery/server
 COPY --chown=node:node ./server/ .
+RUN yarn
 WORKDIR /crisp-bigquery/client
 COPY --chown=node:node ./client/ .
 RUN yarn && yarn build:prod
