@@ -4,9 +4,10 @@
   smaller script bundle. Since this solution is based on
   Crisp React, please see:
   https://winwiz1.github.io/crisp-react/#spa-configuration
+  https://github.com/winwiz1/crisp-react/blob/master/client/config/spa.config.js
 */
 
-var ConfiguredSPAs = function () {
+var ConfiguredSPAs = function() {
   function SPA(params) {
     this.params = params;
   }
@@ -22,16 +23,16 @@ var ConfiguredSPAs = function () {
   SPAs.appTitle = "Crisp BigQuery";
   /****************** End SPA Configuration ******************/
 
-  SPAs.verifyParameters = function (verifier) {
+  SPAs.verifyParameters = function(verifier) {
     if (SPAs.length === 0) {
       throw new RangeError("At least one SPA needs to be configured");
     }
 
-    SPAs.forEach(function (spa, idx) {
+    SPAs.forEach(function(spa, idx) {
       spa.params = verifier(spa.params, idx);
     });
 
-    var num = SPAs.reduce(function (acc, item) {
+    var num = SPAs.reduce(function(acc, item) {
       return item.params.redirect ? acc + 1 : acc;
     }, 0);
 
@@ -40,33 +41,39 @@ var ConfiguredSPAs = function () {
     }
   };
 
-  SPAs.getEntrypoints = function () {
+  SPAs.getEntrypoints = function() {
     var entryPoints = new Object();
-    SPAs.forEach(spa => (entryPoints[spa.params.name] = spa.params.entryPoint));
-    return entryPoints;
+    SPAs.forEach(function(spa) {
+      entryPoints[spa.params.name] = spa.params.entryPoint;
+    });
+     return entryPoints;
   };
 
-  SPAs.getRedirectName = function () {
-    return SPAs.find(spa => spa.params.redirect).params.name;
+  SPAs.getRedirectName = function() {
+    return SPAs.find(function(spa) {
+      return spa.params.redirect;
+    }).params.name;
   };
 
-  SPAs.getNames = function () {
+  SPAs.getNames = function() {
     var spaNames = new Array();
-    SPAs.forEach(spa => spaNames.push(spa.params.name));
+    SPAs.forEach(function(spa) {
+      spaNames.push(spa.params.name);
+    });
     return spaNames;
   };
 
-  SPAs.getRewriteRules = function () {
+  SPAs.getRewriteRules = function() {
     var ret = new Array();
-    SPAs.forEach(spa => {
+    SPAs.forEach(function(spa) {
       var rule = new Object();
-      rule.from = new RegExp(`^/${spa.params.name}` + "(\\.html)?$");
-      rule.to = `${spa.params.name}.html`;
+      rule.from = new RegExp("^/" + spa.params.name + "(\\.html)?$");
+      rule.to = spa.params.name + ".html";
       ret.push(rule);
     });
     ret.push({
       from: new RegExp("^.*$"),
-      to: `/${SPAs.getRedirectName()}.html`
+      to: "/" + SPAs.getRedirectName() + ".html"
     });
     return ret;
   };
