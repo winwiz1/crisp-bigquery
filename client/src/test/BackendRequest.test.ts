@@ -49,12 +49,13 @@ describe("Testing BackendRequest with invalid data", () => {
   });
 
   it("should reject inconsistent pagination data", () => {
+    const date = moment().toDate();
     const data: IBackendRequestData = {
-      endDate: moment().toDate(),
+      endDate: date,
       jobId: "abc",
       pageToken: undefined,
       rowCount: 1,
-      startDate: moment().toDate(),
+      startDate: date,
     };
     /* tslint:disable:no-unused-expression */
     function testCreate1() {
