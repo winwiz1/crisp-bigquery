@@ -1,7 +1,7 @@
 /**
  * The class Server is responsible for Express configuration.
  * Express is configured to serve the build artefacts produced
- * by the sibling 'client' project (script bundles, HTML files,
+ * by the sibling 'client' sub-project (script bundles, HTML files,
  * source maps) either from disk or from webpack-dev-server
  * acting as a reverse proxy for the latter.
  */
@@ -10,11 +10,12 @@ import * as express from "express";
 import nodeFetch from "node-fetch";
 import * as helmet from "helmet";
 import * as expressStaticGzip from "express-static-gzip";
-import proxy = require("http-proxy-middleware");
+import favicon = require("serve-favicon");
 import * as SPAs from "../../config/spa.config";
 import { CustomError, handleErrors } from "../utils/error";
 import { logger } from "../utils/logger";
 import { BigQueryController } from "../api/controllers/BigQueryController";
+const { createProxyMiddleware } = require("http-proxy-middleware");
 
 export enum StaticAssetPath {
   // The path to static assets served by Express needs to be
@@ -45,6 +46,13 @@ class Server {
   /********************** private methods and data ************************/
 
   private config(): void {
+    this.m_app.use([
+      helmet({
+        noCache: false,
+      }),
+      favicon(path.join(__dirname, "../../pub/", "fav.ico"))
+    ]);
+
     this.m_app.use(helmet({
       noCache: true,
     }));
@@ -68,7 +76,7 @@ class Server {
 
     this.m_app.get("/:entryPoint([\\w.]+)", (req, res, next) => {
       let entryPoint: string|undefined = req.params.entryPoint;
-      const match = Server.s_regexLandingPages.test(entryPoint ?? "");
+      const match = Server.s_regexLandingPages.test(entryPoint || "");
 
       if (match) {
         // Serve SPA landing page
@@ -93,7 +101,7 @@ class Server {
     // Proxy to devserver ws:// protocol
     if (Server.s_useDevWebserver) {
       this.m_app.use("/sockjs-node",
-        proxy({ target: Server.s_urlDevWebserver, changeOrigin: true, ws: true })
+        createProxyMiddleware({ target: Server.s_urlDevWebserver, changeOrigin: true, ws: true })
       );
     }
 
@@ -101,7 +109,7 @@ class Server {
 
     // Default 404 handler
     this.m_app.use((req, _res, next) => {
-      const err = new CustomError(404, "Resourse not found", true);
+      const err = new CustomError(404, "Resourse not found");
       logger.info(`Invalid resourse requested from ${req.ips} using path ${req.originalUrl}`);
       return next(err);
     });
@@ -112,7 +120,7 @@ class Server {
 
     nodeFetch(devUrl)
       .then(resp => {
-        const contentType = resp.headers.get("content-type") ?? "application/json";
+        const contentType = resp.headers.get("content-type") || "application/json";
         res.setHeader("Content-Type", contentType);
         if (page.startsWith("/static/")) {
           res.setHeader("Cache-Control", "max-age=31536000");
@@ -123,7 +131,7 @@ class Server {
         const errMsg = "Failed to send static resourse from internal server";
         const logMsg = `Failed to send ${devUrl} from dev-webserver due to error: ${err}`;
         logger.error(logMsg);
-        next(new CustomError(500, errMsg, true, true));
+        next(new CustomError(500, errMsg));
       });
   }
 
@@ -136,7 +144,7 @@ class Server {
   // middleware responsible for serving client's build artifacts
   private artifactsMiddleware = (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const artifactFile: string|undefined = (req.params as any).artifactFile;
-    const match = Server.s_regexArtifacts.test(artifactFile ?? "");
+    const match = Server.s_regexArtifacts.test(artifactFile || "");
 
     if (match) {
       if (Server.s_useDevWebserver) {
@@ -145,7 +153,7 @@ class Server {
         this.m_expressStaticMiddleware!(req, res, next);
       }
     } else {
-      const err = new CustomError(404, "Resourse not found", true);
+      const err = new CustomError(404, "Resourse not found");
       logger.info(`Invalid static resourse "${artifactFile}" requested from ${req.ips} using path ${req.originalUrl}`);
       return next(err);
     }

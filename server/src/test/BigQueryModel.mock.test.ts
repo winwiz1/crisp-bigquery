@@ -6,17 +6,20 @@ import { BigQueryRetrieval  } from "../api/types/BigQueryTypes";
 import { TestConfig } from "./TestConfig";
 
 const mockMessage = "test-mock";
+let spyInstance: jest.SpyInstance|undefined;
 
 beforeAll(() => {
   jest.spyOn(BigQueryModel.prototype, "fetch").mockImplementation(async (_params: any) => {
     return Promise.resolve();
   });
-  jest.spyOn(BigQueryModel.prototype, "getData").mockImplementation(() => {
+  spyInstance = jest.spyOn(BigQueryModel.prototype, "getData").mockImplementation(() => {
     return new Error(mockMessage);
   });
 });
 
 afterAll(() => {
+  expect(spyInstance).toBeDefined();
+  expect(spyInstance).toHaveBeenCalledTimes(1);
   jest.restoreAllMocks();
 });
 
