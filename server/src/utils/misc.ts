@@ -6,6 +6,12 @@ export function getListeningPort(): number {
   return port;
 }
 
+// Get the limit for cache size
+export function getCacheLimit(): number {
+  const port = parseInt(process.env.CACHE_LIMIT || "5000", 10);
+  return port;
+}
+
 // Returns true if running on Google Cloud Run.
 // Assumption: the port 8080 is reserved for Cloud Run.
 export function isGoogleCloudRun(): boolean {

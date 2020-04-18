@@ -345,9 +345,9 @@ export const AutoPaginate: React.FunctionComponent<IAutoPaginateProps> = props =
 
     abortController.current = undefined;
     loopingCount.current = undefined;
-    updateCounts();
-
     const moreData = !!props.cache.getLastPage()?.token && fetchOutcome;
+    
+    updateCounts(fetchOutcome && !moreData);
 
     setStatus({
       error: !fetchOutcome,
@@ -363,11 +363,11 @@ export const AutoPaginate: React.FunctionComponent<IAutoPaginateProps> = props =
     return props.newQuery && props.cache.getPageCount() > 0;
   };
 
-  const updateCounts = () => {
+  const updateCounts = (finishedNoDataLeft: boolean) => {
     setPageCountFetched(props.cache.getPageCount());
     setRowCountFetched(props.cache.getRowCount());
-    setRowCountRemaining(getRowCountRemaining());
-    setPageCountRemaining(getPageCountRemaining());
+    setRowCountRemaining(finishedNoDataLeft? "0" : getRowCountRemaining());
+    setPageCountRemaining(finishedNoDataLeft? "0" : getPageCountRemaining());
   };
 
   //#endregion

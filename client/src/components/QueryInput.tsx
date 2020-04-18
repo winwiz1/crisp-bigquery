@@ -206,7 +206,7 @@ export const QueryInput: React.FunctionComponent<IAuditQueryProps> = props => {
         <Accordion.Title active={accordionActive} onClick={handleAccordion}>
           <Icon name="dropdown" />
           <Popup
-            content={"Click to toggle collapse"}
+            content={"Click to toggle folding"}
             trigger={
               <div className={cssAccordionHeader}>Query Options</div>
             }

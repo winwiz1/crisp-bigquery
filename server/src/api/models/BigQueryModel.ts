@@ -19,7 +19,7 @@ import {
    BigQueryRetrieval,
    BigQueryRetrievalResult,
    BigQueryRetrievalRow } from "../types/BigQueryTypes";
-import { EnvVariables, EnvConfig } from "../../utils/misc";
+import { EnvVariables, EnvConfig, getCacheLimit } from "../../utils/misc";
 import { PersistentStorageManager } from "../../utils/storage";
 
 /*
@@ -102,6 +102,14 @@ export class BigQueryModel implements IBigQueryFetcher {
 
   public async fetch(bqRequest: BigQueryRequest): Promise<void> {
     this.m_bqRequest = bqRequest;
+
+    if (this.m_cache.getStats().keys > BigQueryModel.s_limitCache)
+    {
+      const custErr = new CustomError(503, BigQueryModel.s_errBusy, true, true);
+      custErr.unobscuredMessage = `Client ${bqRequest.clientAddress} rejected due to cache limit`;
+      this.m_queryResult = custErr;
+      return;
+    }
 
     const dataUsage = this.getDataUsage(bqRequest.clientAddress);
     // Check data usage per client
@@ -413,7 +421,7 @@ export class BigQueryModel implements IBigQueryFetcher {
   );
 
   private readonly m_cache = new NodeCache({
-    checkperiod: 900,
+    checkperiod: 600,
     deleteOnExpire: true,
     stdTTL: BigQueryModel.s_JobCleanupInterval,
     useClones: false
@@ -423,11 +431,13 @@ export class BigQueryModel implements IBigQueryFetcher {
   private static s_config?: BigQueryModelConfig = undefined;
   private static readonly s_errMsg = "Failed to query the backend database. Please retry later. If the problem persists contact Support";
   private static readonly s_errStale = "Stale backend query";
+  private static readonly s_errBusy = "The server is busy";
   private static readonly s_errLaunch = "Failed to launch BigQuery job to perform a query";
   private static readonly s_errLimitClient = "The daily limit of database queries has been reached. Please contact Support if you feel this limit is inadequate.";
   private static readonly s_errLimitInstance = "Temporary unable to query the backend database. Please contact Support.";
   private static readonly s_limitPrefix = "bqlimit_";
   private static readonly s_limitInstance = "bqlimit_instance";
-  private static readonly s_JobCleanupInterval = 3600;
+  private static readonly s_JobCleanupInterval = 1200;
   private static readonly s_limitCleanupInterval = 3600 * 24;
+  private static readonly s_limitCache = getCacheLimit();                       // depends on memory
 }
