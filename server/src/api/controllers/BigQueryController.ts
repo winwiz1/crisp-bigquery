@@ -1,4 +1,5 @@
 import * as express from "express";
+import * as RateLimit from "express-rate-limit";
 import { BigQueryModel, BigQueryModelConfig } from "../models/BigQueryModel";
 import {
   BigQueryRequest,
@@ -17,12 +18,20 @@ const jsonParser = express.json({
   type: "application/json"
 });
 
+// Allow 20 requests (one data page/screen each) plus one
+// auto-pagination request (fetching 100 data pages) every 3 minutes.
+const rateLimiter = RateLimit({
+  windowMs: 3 * 60 * 1000,        // 3 minutes
+  max: 120                        // limit each IP to 120 requests per windowMs
+});
+
 /*
   API route handler
 */
 export class BigQueryController {
   static readonly addRoute = (app: express.Application): void => {
     app.post(BigQueryRequest.Path,
+      rateLimiter,
       jsonParser,
       async (req: express.Request, res: express.Response, next: express.NextFunction) => {
         try {
