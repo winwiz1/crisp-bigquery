@@ -32,30 +32,26 @@ describe("Testing BigQueryRequest with invalid data", () => {
   it("should reject invalid startDate", () => {
     const testReq = TestConfig.getStockTestRequest();
     testReq.startDate = "2019-05-10T10:27:55.512Z**bad***";
-    const reqJson = TestConfig.getRequestAsJson(testReq);
-    expect(BigQueryRequest.fromJson(reqJson, validAddress, errInfo, true)).not.toBeDefined();
+    expect(BigQueryRequest.fromJson(testReq, validAddress, errInfo, true)).not.toBeDefined();
   });
 
   it("should reject invalid endDate", () => {
     const testReq = TestConfig.getStockTestRequest();
     testReq.endDate = "2019-05-10T10:27:55.512Z**bad***";
-    const reqJson = TestConfig.getRequestAsJson(testReq);
-    expect(BigQueryRequest.fromJson(reqJson, validAddress, errInfo, true)).not.toBeDefined();
+    expect(BigQueryRequest.fromJson(testReq, validAddress, errInfo, true)).not.toBeDefined();
   });
 
   it("should reject invalid rowCount", () => {
     const testReq = TestConfig.getStockTestRequest();
     testReq.rowCount = -1;
-    const reqJson = TestConfig.getRequestAsJson(testReq);
-    expect(BigQueryRequest.fromJson(reqJson, validAddress, errInfo, true)).not.toBeDefined();
+    expect(BigQueryRequest.fromJson(testReq, validAddress, errInfo, true)).not.toBeDefined();
   });
 
   it("should reject query timeframe longer than 8 days", () => {
     const testReq = TestConfig.getStockTestRequest();
     testReq.startDate = moment.utc().toDate().toDateString();
     testReq.endDate = moment.utc().add(9, "days").utc().toDate().toDateString();
-    const reqJson = TestConfig.getRequestAsJson(testReq);
-    expect(BigQueryRequest.fromJson(reqJson, validAddress, errInfo, true)).not.toBeDefined();
+    expect(BigQueryRequest.fromJson(testReq, validAddress, errInfo, true)).not.toBeDefined();
 
   });
 
@@ -63,8 +59,7 @@ describe("Testing BigQueryRequest with invalid data", () => {
     const testReq = TestConfig.getStockTestRequest();
     testReq.startDate = moment.utc().add(1, "days").utc().toDate().toDateString();
     testReq.endDate = moment.utc().toDate().toDateString();
-    const reqJson = TestConfig.getRequestAsJson(testReq);
-    expect(BigQueryRequest.fromJson(reqJson, validAddress, errInfo, true)).not.toBeDefined();
+    expect(BigQueryRequest.fromJson(testReq, validAddress, errInfo, true)).not.toBeDefined();
   });
 });
 
@@ -75,15 +70,14 @@ describe("Testing BigQueryRequest with valid data", () => {
     const testReq = TestConfig.getStockTestRequest();
     testReq.name = "abc_XYZ.123-v";
     testReq.language = "C++";
-    const reqJson = TestConfig.getRequestAsJson(testReq);
-    expect(BigQueryRequest.fromJson(reqJson, validAddress, errInfo, true)).toBeDefined();
+    expect(BigQueryRequest.fromJson(testReq, validAddress, errInfo, true)).toBeDefined();
   });
 
   it("should accept valid names", () => {
-    const reqJson = TestConfig.getRequestAsJson(TestConfig.getStockTestRequest());
+    const req = TestConfig.getStockTestRequest();
     TestConfig.getValidNames().forEach(name => {
-      reqJson.name = name;
-      expect(TestConfig.getRequest(reqJson)).toBeDefined();
+      req.name = name;
+      expect(TestConfig.getRequest(req)).toBeDefined();
     });
   });
 
@@ -91,15 +85,13 @@ describe("Testing BigQueryRequest with valid data", () => {
     const testReq = TestConfig.getStockTestRequest();
     testReq.startDate = moment.utc().toDate().toDateString();
     testReq.endDate = moment.utc().add(7, "days").utc().toDate().toDateString();
-    const reqJson = TestConfig.getRequestAsJson(testReq);
-    expect(BigQueryRequest.fromJson(reqJson, validAddress, errInfo, true)).toBeDefined();
+    expect(BigQueryRequest.fromJson(testReq, validAddress, errInfo, true)).toBeDefined();
   });
 
   it("should accept valid rowCount", () => {
     const testReq = TestConfig.getStockTestRequest();
     testReq.rowCount = 10000;
-    const reqJson = TestConfig.getRequestAsJson(testReq);
-    expect(BigQueryRequest.fromJson(reqJson, validAddress, errInfo, true)).toBeDefined();
+    expect(BigQueryRequest.fromJson(testReq, validAddress, errInfo, true)).toBeDefined();
   });
 
   it("should generate SQL clause", () => {
