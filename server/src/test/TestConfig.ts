@@ -13,7 +13,7 @@ type TestRequest = {
 };
 
 export class TestConfig {
-  static readonly getValidNames = () => {
+  static readonly getValidNames = (): ReadonlyArray<string|undefined>  => {
     const names = [
       "myrepo",
       "Repo1234567890",
@@ -24,7 +24,7 @@ export class TestConfig {
     return names;
   }
 
-  static readonly getInvalidNames = () => {
+  static readonly getInvalidNames = (): ReadonlyArray<string>  => {
     const names = [
       "repo#",
       "Repo<B",

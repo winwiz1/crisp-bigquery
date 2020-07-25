@@ -57,13 +57,16 @@ export class CustomError extends Error {
   // If true then no response is sent by error-handling middleware
   private m_logOnly: boolean = false;
 
-  readonly m_loggingTuple: [boolean, boolean] = [true, true];
+  // By default do log the request and do not log the response
+  readonly m_loggingTuple: [boolean, boolean] = [true, false];
 }
 
+// eslint-disable-next-line
 export function isError(err: any): err is Error {
   return !!err && err instanceof Error && err.constructor !== CustomError;
 }
 
+// eslint-disable-next-line
 export function isCustomError(err: any): err is CustomError {
   return !!err && err.constructor === CustomError;
 }
@@ -83,32 +86,67 @@ function errorMiddleware(
 
   if (isCustomError(err)) {
     const status = err.status;
-    isTest() || logger.error({
-      message: "ErrorMessage: " + (err.unobscuredMessage ?? err.message) + "\n",
-      ...(err.m_loggingTuple[0] && request),
-      ...(err.m_loggingTuple[1] && response)
+    const logMsg = augmentLogMessage(
+      err.unobscuredMessage ?? err.message,
+      err.m_loggingTuple[0]? request: undefined,
+      err.m_loggingTuple[1]? response: undefined
+    );
+
+    isTest() || logger.warn({
+      message: `statusCode: '${err.status}' description: ${logMsg}`
     });
     if (!err.logOnly) {
       response.status(status).type("txt").send(err.message);
     }
   } else if (isError(err)) {
-    logger.error({
-      message: "ErrorMessage: " + err.message + "\n",
-      request,
-      response });
+    const logMsg = augmentLogMessage(err.message, request, response);
+
+    logger.warn({
+      message: logMsg
+    });
     response.status(500).type("txt").send(err.message);
   } else {
-    const errMsg = `Unexpected error type: ${typeof err}`;
-    logger.error({
-      message: errMsg + "\n",
-      request,
-      response });
-    throw new TypeError(errMsg);
-  }
+    const logMsg = augmentLogMessage(`Unexpected error type: ${typeof err}`, request, response);
 
-  next(err);
+    logger.error({
+      message: logMsg
+    });
+    next(err);
+  }
 }
 
-export function handleErrors(app: Express.Application) {
+export function handleErrors(app: Express.Application): void {
   app.use(errorMiddleware);
+}
+
+// Utility function
+function augmentLogMessage(msg: string, req?: Express.Request, resp?: Express.Response): string {
+  let ret = `'${msg}'`;
+
+  if (req) {
+    ret += ` req.method: '${req.method}'`;
+    ret += ` req.remoteIp: '${req.ip.indexOf(":") >= 0 ? req.ip.substring(req.ip.lastIndexOf(":") + 1) : req.ip}'`;
+    ret += ` req.url: '${req.protocol}` + "://" + `${req.get("host")}${req.originalUrl}'`;
+    ret += ` req.referrer: '${req.get("Referrer") ?? "no data"}'`;
+    ret += ` req.size: '${req.socket.bytesRead}'`;
+    ret += ` req.userAgent: '${req.get("User-Agent") ?? "no data"}'`;
+  }
+
+  if (resp) {
+    ret += ` res.statusCode: '${resp.statusCode ?? "not yet set"}'`;
+
+    let respSize: number|undefined;
+
+    if ((resp as any).body) {
+      if (typeof (resp as any).body === 'object') {
+        respSize = JSON.stringify((resp as any).body).length;
+      } else if (typeof (resp as any).body === 'string') {
+        respSize = (resp as any).body.length;
+      }
+    }
+
+    !!respSize && (ret += ` res.size: '${respSize}'`);
+  }
+
+  return ret;
 }

@@ -27,6 +27,7 @@ export class CustomError extends Error {
   Utility function used for error handling.
 */
 export function domErrorToString(err: DOMError | undefined): string {
+  // eslint-disable-next-line no-extra-boolean-cast
   return !!err ?
     `Error: ${err.name}, description: ${err.toString?.() || "<no description>"}` :
     "No error details available";
@@ -36,6 +37,7 @@ export function domErrorToString(err: DOMError | undefined): string {
   Utility function used for error handling.
 */
 export function domExceptionToString(ex: DOMException | undefined): string {
+  // eslint-disable-next-line no-extra-boolean-cast
   return !!ex ?
     `Exception: ${ex.code}, description: ${ex.message || "<no description>"}` :
     "No exception details available";

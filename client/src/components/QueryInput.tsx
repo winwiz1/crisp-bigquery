@@ -190,9 +190,11 @@ export const QueryInput: React.FunctionComponent<IAuditQueryProps> = props => {
 
   // Client side checks to prevent invalid requests
   function isNameValid(nameToCheck: string | undefined): boolean {
+    // eslint-disable-next-line no-extra-boolean-cast
     return !!nameToCheck ? BackendManager.RegexName.test(nameToCheck) : true;
   }
   function isLanguageValid(languageToCheck: string | undefined): boolean {
+    // eslint-disable-next-line no-extra-boolean-cast
     return !!languageToCheck ? BackendManager.RegexLanguage.test(languageToCheck) : true;
   }
 
@@ -235,7 +237,8 @@ export const QueryInput: React.FunctionComponent<IAuditQueryProps> = props => {
                   initialMonth={startDate}
                 />
 
-                {!!startDate ? (
+                {// eslint-disable-next-line no-extra-boolean-cast
+                 !!startDate ? (
                   <div className={cssMarginLeft}>
                     Start date: {startDate.toLocaleDateString("en-US", { hour12: false })}
                     <br />
@@ -266,7 +269,8 @@ export const QueryInput: React.FunctionComponent<IAuditQueryProps> = props => {
                   month={startDate}
                 />
 
-                {!!endDate ? (
+                {// eslint-disable-next-line no-extra-boolean-cast
+                 !!endDate ? (
                   <div className={cssMarginLeft}>
                     End date: {endDate.toLocaleDateString("en-US", { hour12: false })}
                     <br />

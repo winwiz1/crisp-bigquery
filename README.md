@@ -65,7 +65,8 @@ Go to GCP [API Dashboard](https://console.cloud.google.com/apis/dashboard) and e
 Create `samples.github` table optimised for better performance and lower data usage. It will contain GitHub data. In [BigQuery Web UI](https://console.cloud.google.com/bigquery) click on the "Activate Cloud Shell" icon and execute the command in the Cloud Shell:
 
     ````
-    bq query --use_legacy_sql=false --destination_table samples.github --time_partitioning_field created_time --clustering_fields repository_name,repository_language 'SELECT
+    bq query --use_legacy_sql=false --destination_table samples.github --time_partitioning_field created_time --clustering_fields repository_name,repository_language --replace '#standardSQL
+    SELECT
     repository_name,
     repository_language,
     repository_size,
@@ -74,7 +75,7 @@ Create `samples.github` table optimised for better performance and lower data us
     repository_owner,
     TIMESTAMP(created_at) as created_time
     FROM
-    `bigquery-public-data.samples.github_timeline`
+    bigquery-public-data.samples.github_timeline
     WHERE
     created_at IS NOT NULL AND repository_name IS NOT NULL AND
     repository_language IS NOT NULL and repository_owner IS NOT NULL AND
@@ -131,7 +132,7 @@ In the following commands:
     ,
     {  
     "role": "READER",  
-    "userByEmail": "[<sa-name>@<project-name>.iam.gserviceaccount.com](mailto:<sa-name>@<project-name>.iam.gserviceaccount.com)"  
+    "userByEmail": "<sa-name>@<project-name>.iam.gserviceaccount.com"
     }
     ```
 

@@ -41,7 +41,7 @@ export class BackendManager implements IBackendClient {
     return this.m_queryResult;
   }
 
-  public readonly fetch = async (request: IBackendRequestData) => {
+  public readonly fetch = async (request: IBackendRequestData): Promise<boolean> => {
     try {
       this.m_queryParams = new BackendRequest(request);
       await this.fetchData();
@@ -109,10 +109,11 @@ export class BackendManager implements IBackendClient {
     }
   }
 
-  private static parser = (inputObj: object): BigQueryRetrievalResult | undefined => {
+  private static parser = (inputObj: Record<string, unknown>): BigQueryRetrievalResult | undefined => {
     const obj: BigQueryRetrievalResult = Object.create(BigQueryRetrievalResult.prototype);
     const ret = Object.assign(obj, inputObj);
     const propNames = ["rows", "jobComplete", "totalRows", "returnedRows", "totalBytesProcessed"];
+    // eslint-disable-next-line no-prototype-builtins
     const hasProps = propNames.every(prop => ret.hasOwnProperty(prop));
 
     return hasProps ? ret : undefined;

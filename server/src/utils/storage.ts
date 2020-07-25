@@ -5,7 +5,7 @@
 import * as  NodeCache from "node-cache";
 
 export class PersistentStorageManager {
-  public static ReadLimitCounters(_cache: NodeCache) {
+  public static ReadLimitCounters(_cache: NodeCache): void {
     // TODO
     // Provide an implmentation to restore all the data limit counters from
     // the database of your choice. If a counter was updated >24 hours ago
@@ -16,7 +16,7 @@ export class PersistentStorageManager {
 
   public static WriteLimitCounters(
     _counterNames: [string, string?],
-    _counterValue: number) {
+    _counterValue: number): void {
     // TODO
     // If the counter value '_counterValue' is greater than zero then:
     //  - Throw an exception if the tuple contains less than two names.

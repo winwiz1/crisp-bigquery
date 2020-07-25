@@ -1,8 +1,6 @@
 /*
-  If your React application grows big you might want to consider
-  splitting it into several SPAs, each rendered by its own and
-  smaller script bundle. Since this solution is based on
-  Crisp React, please see:
+Crisp React supports splitting React application into several SPAs.
+Since this solution is based on Crisp React, please see:
   https://winwiz1.github.io/crisp-react/#spa-configuration
   https://github.com/winwiz1/crisp-react/blob/master/client/config/spa.config.js
 */
@@ -56,7 +54,7 @@ var ConfiguredSPAs = function() {
   };
 
   SPAs.getNames = function() {
-    var spaNames = new Array();
+    var spaNames = [];
     SPAs.forEach(function(spa) {
       spaNames.push(spa.params.name);
     });
@@ -64,7 +62,7 @@ var ConfiguredSPAs = function() {
   };
 
   SPAs.getRewriteRules = function() {
-    var ret = new Array();
+    var ret = [];
     SPAs.forEach(function(spa) {
       var rule = new Object();
       rule.from = new RegExp("^/" + spa.params.name + "(\\.html)?$");

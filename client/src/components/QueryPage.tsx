@@ -188,11 +188,11 @@ export class QueryPage extends React.Component<QueryPageProps, QueryPageState> {
     this.setState(state => ({ ...state, paginationModalVisible: false }));
   }
 
-  public componentWillUnmount() {
+  public componentWillUnmount(): void {
     this.m_controller && this.m_controller.abort();
   }
 
-  public componentDidUpdate(prevProps: QueryPageProps, /*_prevState: QueryPageState */) {
+  public componentDidUpdate(prevProps: QueryPageProps, /*_prevState: QueryPageState */): void {
     const cnt = this.m_cache.getPageCount();
 
     if (cnt === 0 || this.props.fetch.inFlight || !this.state.lastRequest || !!this.state.error) {
@@ -209,7 +209,7 @@ export class QueryPage extends React.Component<QueryPageProps, QueryPageState> {
     }
   }
 
-  public shouldComponentUpdate(nextProps: QueryPageProps, nextState: QueryPageState) {
+  public shouldComponentUpdate(nextProps: QueryPageProps, nextState: QueryPageState): boolean {
     if (this.props.fetch !== nextProps.fetch ||
         this.state.error !== nextState.error ||
         this.state.paginationModalVisible !== nextState.paginationModalVisible) {
@@ -219,6 +219,7 @@ export class QueryPage extends React.Component<QueryPageProps, QueryPageState> {
     return false;
   }
 
+  // eslint-disable-next-line
   public render() {
     const cnt = this.m_cache.getPageCount();
     const page = this.props.fetch.currentPage;

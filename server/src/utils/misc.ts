@@ -8,8 +8,25 @@ export function getListeningPort(): number {
 
 // Get the limit for cache size
 export function getCacheLimit(): number {
-  const port = parseInt(process.env.CACHE_LIMIT || "5000", 10);
-  return port;
+  const limit = parseInt(process.env.CACHE_LIMIT || "5000", 10);
+  return limit;
+}
+
+// Get the daily data usage limit for the backend instance
+export function getDataLimit(): number {
+  const limit = parseInt(process.env.DATA_LIMIT || "100000", 10);                 // ~100 GB
+  return limit;
+}
+
+// Get the daily data usage limit for a single client
+export function getDataLimitClient(): number {
+  const limit = parseInt(process.env.DATA_LIMIT_CLIENT || "2500", 10);             // 50 queries 50 MB each
+  return limit;
+}
+
+export function useProxy(): boolean {
+  const ret = parseInt(process.env.BEHIND_PROXY || "0", 10);
+  return ret === 1;
 }
 
 // Returns true if running on Google Cloud Run.
@@ -20,6 +37,24 @@ export function isGoogleCloudRun(): boolean {
 
 export function isTest(): boolean {
   return process.env.NODE_ENV === "test";
+}
+
+export function isProduction(): boolean {
+  return process.env.NODE_ENV === "production";
+}
+
+export function isDocker(): boolean {
+  try {
+    fs.statSync("/.dockerenv");
+    return true;
+  } catch {
+    try {
+      fs.statSync("/.dockerinit");
+      return true;
+    } catch {
+      return false;
+    }
+  }
 }
 
 export type EnvVariables = {
@@ -41,12 +76,10 @@ export class EnvConfig {
       }
       return EnvConfig.s_envVariables!;
     }
-    /* tslint:disable:no-string-literal */
     const gcpProjectId = process.env["GCP_PROJECT_ID"] || (process.env["PROJECT_ID"] ?? "");
     const bqDatasetName = process.env["BIGQUERY_DATASET_NAME"] ?? "";
     const bqTableName = process.env["BIGQUERY_TABLE_NAME"] ?? "";
     const keyFilePath = process.env["KEY_FILE_PATH"] ?? "";
-    /* tslint:enable:no-string-literal */
     EnvConfig.s_checkDone = true;
 
     if (!gcpProjectId.length) {
@@ -61,7 +94,6 @@ export class EnvConfig {
     if (!keyFilePath.length) {
       EnvConfig.s_errMsg += " KEY_FILE_PATH variable not set.";
     }
-
     if (EnvConfig.s_errMsg) {
       throw new Error(EnvConfig.s_errMsg);
     }
@@ -82,9 +114,9 @@ export class EnvConfig {
 
     EnvConfig.s_checkDone = true;
     EnvConfig.s_envVariables = {
+      gcpProjectId,
       bqDatasetName,
       bqTableName,
-      gcpProjectId,
       keyFilePath
     };
 

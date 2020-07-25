@@ -66,7 +66,7 @@ export class BackendRequest {
       }
    }
 
-   static get MaxQueryDuration() {
+   static get MaxQueryDuration(): number {
       return BackendRequest.s_maxQueryDurationDays;
    }
 

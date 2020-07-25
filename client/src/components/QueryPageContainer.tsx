@@ -27,6 +27,7 @@ const mapDispatchToProps: MapDispatchToProps<IQueryPageProps_actionSlice, IQuery
     actions: bindActionCreators(actionCreators, dispatch)
   });
 
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
 interface IQueryPageContainerProps {
 }
 

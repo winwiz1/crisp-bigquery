@@ -8,11 +8,9 @@ describe("Testing BackendRequest with invalid data", () => {
       rowCount: 1,
       startDate: moment().toDate(),
     };
-    /* tslint:disable:no-unused-expression */
     function testCreate() {
       new BackendRequest(data);
     }
-    /* tslint:enable:no-unused-expression */
     expect(testCreate).toThrowError(/invalid/i);
   });
 
@@ -22,11 +20,9 @@ describe("Testing BackendRequest with invalid data", () => {
       rowCount: 1,
       startDate: moment().toDate(),
     };
-    /* tslint:disable:no-unused-expression */
     function testCreate() {
       new BackendRequest(data);
     }
-    /* tslint:enable:no-unused-expression */
     expect(testCreate).toThrowError(/cannot exceed/);
     expect(testCreate).toThrowError(RangeError);
   });
@@ -39,11 +35,9 @@ describe("Testing BackendRequest with invalid data", () => {
     const invalidCounts = [0, 2001, 1000000, -1];
 
     for (const cnt of invalidCounts) {
-      /* tslint:disable:no-unused-expression */
       const testCreate = () => {
         new BackendRequest({ ...data, rowCount: cnt });
       };
-      /* tslint:enable:no-unused-expression */
       expect(testCreate).toThrowError(/invalid.*?rowCount/i);
     }
   });
@@ -57,7 +51,7 @@ describe("Testing BackendRequest with invalid data", () => {
       rowCount: 1,
       startDate: date,
     };
-    /* tslint:disable:no-unused-expression */
+
     function testCreate1() {
       new BackendRequest(data);
     }
@@ -67,7 +61,7 @@ describe("Testing BackendRequest with invalid data", () => {
     function testCreate2() {
       new BackendRequest({ ...data, jobId: undefined, pageToken: "abc" });
     }
-    /* tslint:enable:no-unused-expression */
+
     expect(testCreate2).toThrowError(/inconsistent/i);
   });
 });

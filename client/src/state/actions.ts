@@ -13,6 +13,7 @@ export enum ActionTypes {
   Actions: one action for each action type
 */
 
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
 interface IActionFetchStart extends Action<typeof ActionTypes.FetchStart> {
 }
 

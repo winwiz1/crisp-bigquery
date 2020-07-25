@@ -8,6 +8,14 @@ import { getListeningPort } from "../utils/misc";
 const port = getListeningPort();
 const server = Server();
 
-server.listen(port, () => {
-  logger.info({ message: `Server started, port: ${port}` });
+const instance = server.listen(port, () => {
+  // Use warning to make restarts visible
+  logger.warn({ message: `Server started, port: ${port}` });
+});
+
+process.on("SIGTERM", function () {
+  instance.close(function () {
+    logger.warn({ message: "Server terminated" });
+    process.exit(0);
+  });
 });

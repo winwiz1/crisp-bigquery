@@ -6,7 +6,7 @@
   of protection to the parameters validation performed by both client and
   backend. The regular expressions used for the validation must be either
   simple or constructed using a library that provides protection against
-  DOS attack.
+  DoS attack.
 */
 import { BigQuery, Query as BigQueryRequestBase } from "@google-cloud/bigquery";
 import { Job, QueryResultsOptions } from "@google-cloud/bigquery/build/src/job";
@@ -14,12 +14,20 @@ import * as  NodeCache from "node-cache";
 import { logger } from "../../utils/logger";
 import { CustomError } from "../../utils/error";
 import {
-   IBigQueryData,
-   BigQueryRequest,
-   BigQueryRetrieval,
-   BigQueryRetrievalResult,
-   BigQueryRetrievalRow } from "../types/BigQueryTypes";
-import { EnvVariables, EnvConfig, getCacheLimit } from "../../utils/misc";
+  IBigQueryData,
+  BigQueryRequest,
+  BigQueryRetrieval,
+  BigQueryRetrievalResult,
+  BigQueryRetrievalRow
+} from "../types/BigQueryTypes";
+import {
+  EnvVariables,
+  EnvConfig,
+  getCacheLimit as getCacheSizeLimit,
+  getDataLimit,
+  getDataLimitClient
+} from "../../utils/misc";
+
 import { PersistentStorageManager } from "../../utils/storage";
 
 /*
@@ -29,7 +37,7 @@ export class BigQueryModelConfig {
   constructor(
     // Daily limit on BigQuery data usage in MB per client address
     private limitDailyClientMB = BigQueryModelConfig.s_quotaDailyClientMB,
-    // Daily limit on BigQuery data usage in MB per model instance
+    // Daily limit on BigQuery data usage in MB per backend instance
     private limitDailyInstanceMB = BigQueryModelConfig.s_quotaDailyInstanceMB,
     // Environment config
     readonly envConfig: EnvVariables = EnvConfig.getVariables()
@@ -44,7 +52,7 @@ export class BigQueryModelConfig {
     }
   }
 
-  public readonly setClientDailyLimit = (limit: number) => {
+  public readonly setClientDailyLimit = (limit: number): void => {
     if (typeof limit !== "number" || !Number.isInteger(limit)) {
       throw new TypeError("Client data limit is not an integer");
     }
@@ -65,9 +73,9 @@ export class BigQueryModelConfig {
   }
 
   // Default daily quota on BigQuery data usage in MB per client address
-  private static readonly s_quotaDailyClientMB = 500;             // 500 MB
-  // Default daily quota on BigQuery data usage in MB per instance of BigQueryModel class
-  private static readonly s_quotaDailyInstanceMB = 30 * 1024;     // 30 GB
+  private static readonly s_quotaDailyClientMB = getDataLimitClient();
+  // Default daily quota on BigQuery data usage in MB per backend instance
+  private static readonly s_quotaDailyInstanceMB = getDataLimit();
 }
 
 /*
@@ -87,43 +95,40 @@ export interface IBigQueryFetcher extends IBigQueryData {
   4. Use .Data getter to get either the data fetched or an Error object.
 */
 export class BigQueryModel implements IBigQueryFetcher {
+  static initialize(): void {
+    BigQueryModel.s_cache.on("expired", BigQueryModel.handleCacheExpiry);
+    PersistentStorageManager.ReadLimitCounters(BigQueryModel.s_cache);
+  }
 
   static set Config(config: BigQueryModelConfig) {
     BigQueryModel.s_config = config;
-    BigQueryModel.s_instance = undefined;
   }
 
   static get Factory(): BigQueryModel {
-    if (!BigQueryModel.s_instance) {
-      BigQueryModel.s_instance = new BigQueryModel();
-    }
-    return BigQueryModel.s_instance;
+    const ret = new BigQueryModel();
+    // do some extra work that the model might require
+    return ret;
   }
 
   public async fetch(bqRequest: BigQueryRequest): Promise<void> {
     this.m_bqRequest = bqRequest;
 
-    if (this.m_cache.getStats().keys > BigQueryModel.s_limitCache)
-    {
-      const custErr = new CustomError(503, BigQueryModel.s_errBusy, true, true);
-      custErr.unobscuredMessage = `Client ${bqRequest.clientAddress} rejected due to cache limit`;
-      this.m_queryResult = custErr;
+    if (BigQueryModel.s_cache.getStats().keys > BigQueryModel.s_limitCache) {
+      this.m_queryResult = new CustomError(503, BigQueryModel.s_errBusy, false, false);
+      logger.warn({ message: `Client ${bqRequest.clientAddress} rejected due to cache limit` });
       return;
     }
 
     const dataUsage = this.getDataUsage(bqRequest.clientAddress);
     // Check data usage per client
     if (dataUsage.client_data > BigQueryModel.s_config!.getClientDailyLimit()) {
-      const custErr = new CustomError(509, BigQueryModel.s_errLimitClient, false, false);
-      custErr.unobscuredMessage = `Client ${bqRequest.clientAddress} has reached daily data limit`;
-      this.m_queryResult = custErr;
+      this.m_queryResult = new CustomError(509, BigQueryModel.s_errLimitClient, false, false);
       return;
     }
     // Check data usage by the instance of BigQueryModel class
     if (dataUsage.instance_data > BigQueryModel.s_config!.getInstanceDailyLimit()) {
-      const custErr = new CustomError(509, BigQueryModel.s_errLimitInstance, false, false);
-      custErr.unobscuredMessage = `Client ${bqRequest.clientAddress} request denied due to backend reaching its daily data limit`;
-      this.m_queryResult = custErr;
+      this.m_queryResult = new CustomError(509, BigQueryModel.s_errLimitInstance, false, false);
+      logger.warn({ message: `Client ${bqRequest.clientAddress} request denied due to backend reaching its daily data limit` });
       return;
     }
 
@@ -145,8 +150,6 @@ export class BigQueryModel implements IBigQueryFetcher {
     if (!BigQueryModel.s_config) {
       throw new Error("BigQueryModelConfig is undefined");
     }
-    this.m_cache.on("expired", this.handleCacheExpiry);
-    PersistentStorageManager.ReadLimitCounters(this.m_cache);
   }
 
   private async fetchData(): Promise<void> {
@@ -158,35 +161,34 @@ export class BigQueryModel implements IBigQueryFetcher {
 
       if (bqRequest.JobId) {
         jobId = bqRequest.JobId;
-        job = this.m_cache.get(jobId);
+        job = BigQueryModel.s_cache.get(jobId);
 
         if (!job) {
           job = this.m_bigquery.job(jobId);
-          job && this.m_cache.set(jobId, job);
+          job && BigQueryModel.s_cache.set(jobId, job);
         }
       } else {
         const requestOptions = {
           ...this.m_requestOptions,
           maxResults: bqRequest.RowCount,
-          params: this.getBqRequest(),
-          query: this.amendQuery(),
+          params: this.getRequestParams(),
+          query: this.getQuerySql(),
           useQueryCache: bqRequest.useQueryCache,
         };
         logger.info({ message: `Query: ${requestOptions.query}` });
-        const [jobCreated, ] = await this.m_bigquery.createQueryJob(requestOptions);
+        const [jobCreated,] = await this.m_bigquery.createQueryJob(requestOptions);
         if (jobCreated && jobCreated.id) {
           jobId = jobCreated.id;
           job = jobCreated;
-          this.m_cache.set(jobId, job);
+          BigQueryModel.s_cache.set(jobId, job);
         } else {
           throw new Error(BigQueryModel.s_errLaunch);
         }
       }
 
       if (!job) {
-        const custErr = new CustomError(408, BigQueryModel.s_errStale, false, false);
-        custErr.unobscuredMessage = `Client ${bqRequest.clientAddress} has sent stale request`;
-        this.m_queryResult = custErr;
+        this.m_queryResult = new CustomError(408, BigQueryModel.s_errStale, false, false);
+        logger.warn({ message: `Client ${bqRequest.clientAddress} has sent stale request` });
         return;
       }
 
@@ -257,7 +259,7 @@ export class BigQueryModel implements IBigQueryFetcher {
     data.rows = outRows;
   }
 
-  private handleCacheExpiry = (cache_key: string, value: any) => {
+  private static handleCacheExpiry = (cache_key: string, value: any) => {
     if (!cache_key) {
       return;
     }
@@ -274,8 +276,8 @@ export class BigQueryModel implements IBigQueryFetcher {
 
     try {
       job.cancel().then(
-        () => logger.info({ msg: `Cancelled stale BigQuery job ${job.id}` }),
-        () => logger.warning({ msg: `Failed to cancel stale BigQuery job ${job.id}` })
+        () => logger.info({ message: `Cancelled stale BigQuery job ${job.id}` }),
+        () => logger.warn({ message: `Failed to cancel stale BigQuery job ${job.id}` })
       );
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : (
@@ -283,19 +285,19 @@ export class BigQueryModel implements IBigQueryFetcher {
         Object.keys(err).map((key) => `${key}: ${err[key] ?? "no data"}`).join("\n") +
         ">"
       );
-      logger.warning({ msg: `Failed to cancel stale BigQuery job, error: ${errorMsg}` });
+      logger.warn({ message: `Failed to cancel stale BigQuery job, error: ${errorMsg}` });
     }
   }
 
   private getDatasourceName(): string {
-    const str1 =  `\`${BigQueryModel.s_config!.envConfig.gcpProjectId}`;
+    const str1 = `\`${BigQueryModel.s_config!.envConfig.gcpProjectId}`;
     const str2 = `.${BigQueryModel.s_config!.envConfig.bqDatasetName}`;
     const str3 = `.${BigQueryModel.s_config!.envConfig.bqTableName}\``;
 
     return str1 + str2 + str3;
   }
 
-  private getBqRequest() {
+  private getRequestParams() {
     const bqRequest = this.m_bqRequest as BigQueryRequest;
 
     return {
@@ -304,13 +306,13 @@ export class BigQueryModel implements IBigQueryFetcher {
     };
   }
 
-  private amendQuery(): string {
+  private getQuerySql(): string {
     const bqRequest = this.m_bqRequest as BigQueryRequest;
 
     const replacePatterns = {
-      _between_: bqRequest.getSqlTimeClause(),
+      _between_: bqRequest.SqlTimeClause(),
       _datasource_: this.getDatasourceName(),
-      _params_: bqRequest.getSqlParamClause(),
+      _params_: bqRequest.SqlWhereClause(),
     };
 
     return this.m_query.replace(/_datasource_|_between_|_params_/g,
@@ -318,15 +320,14 @@ export class BigQueryModel implements IBigQueryFetcher {
   }
 
   // TODO Use durable cache
-  private getDataUsage(clientAddress: string):
-      {
-        // Client address
-        client_key: string,
-        // amount of BigQuery data used by the client
-        client_data: number,
-        // amount of data used by the instance of BigQueryModel class.
-        instance_data: number
-      } {
+  private getDataUsage(clientAddress: string): {
+    // Client address
+    client_key: string,
+    // amount of BigQuery data used by the client
+    client_data: number,
+    // amount of data used by the instance of BigQueryModel class.
+    instance_data: number
+  } {
     if (!clientAddress) {
       const errMsg = "BigQueryModel.checkLimit - missing clientAddress";
       logger.error({ message: errMsg });
@@ -334,7 +335,7 @@ export class BigQueryModel implements IBigQueryFetcher {
     }
 
     const clientKey = BigQueryModel.s_limitPrefix + clientAddress;
-    const cacheData = this.m_cache.mget([clientKey, BigQueryModel.s_limitInstance]);
+    const cacheData = BigQueryModel.s_cache.mget([clientKey, BigQueryModel.s_limitInstance]);
     const clientData = typeof cacheData[clientKey] === "number" ?
       cacheData[clientKey] as number : 0;
     const instanceData = typeof cacheData[BigQueryModel.s_limitInstance] === "number" ?
@@ -353,12 +354,14 @@ export class BigQueryModel implements IBigQueryFetcher {
     const cntBytesProcessedMB = cntBytesMB > bqThresholdMB ? cntBytesMB : bqThresholdMB;
     const { client_key, client_data, instance_data } = this.getDataUsage(clientAddress);
 
-    const ret = this.m_cache.mset([
-      { key: client_key,
+    const ret = BigQueryModel.s_cache.mset([
+      {
+        key: client_key,
         ttl: BigQueryModel.s_limitCleanupInterval,
         val: client_data + cntBytesProcessedMB,
       },
-      { key: BigQueryModel.s_limitInstance,
+      {
+        key: BigQueryModel.s_limitInstance,
         ttl: BigQueryModel.s_limitCleanupInterval,
         val: instance_data + cntBytesProcessedMB,
       }
@@ -420,14 +423,6 @@ export class BigQueryModel implements IBigQueryFetcher {
     }
   );
 
-  private readonly m_cache = new NodeCache({
-    checkperiod: 600,
-    deleteOnExpire: true,
-    stdTTL: BigQueryModel.s_JobCleanupInterval,
-    useClones: false
-  });
-
-  private static s_instance?: BigQueryModel = undefined;
   private static s_config?: BigQueryModelConfig = undefined;
   private static readonly s_errMsg = "Failed to query the backend database. Please retry later. If the problem persists contact Support";
   private static readonly s_errStale = "Stale backend query";
@@ -439,5 +434,14 @@ export class BigQueryModel implements IBigQueryFetcher {
   private static readonly s_limitInstance = "bqlimit_instance";
   private static readonly s_JobCleanupInterval = 1200;
   private static readonly s_limitCleanupInterval = 3600 * 24;
-  private static readonly s_limitCache = getCacheLimit();                       // depends on memory
+  private static readonly s_limitCache = getCacheSizeLimit();
+
+  private static readonly s_cache = new NodeCache({
+    checkperiod: 600,
+    deleteOnExpire: true,
+    stdTTL: BigQueryModel.s_JobCleanupInterval,
+    useClones: false
+  });
 }
+
+BigQueryModel.initialize();

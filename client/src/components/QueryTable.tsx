@@ -42,7 +42,6 @@ interface IColumn {
 // QueryTable renders this array of columns.
 // The visible columns are displayed in the given order.
 // The columns with 'visible: false' are ignored.
-/* tslint:disable:object-literal-sort-keys */
 const columns: ReadonlyArray<IColumn> = [
   {
     name: "DateTime",
@@ -91,7 +90,6 @@ const columns: ReadonlyArray<IColumn> = [
     collapsing: true,
   },
 ];
-/* tslint:enable:object-literal-sort-keys */
 
 // Filtered columns that need to be rendered by QueryTable
 const filteredColumns = columns.filter(column => column.visible);

@@ -77,7 +77,7 @@ const cssButtonPaginate = style({
 /*
   QueryPagination component
 */
-export const QueryPagination = (props: QueryPaginationProps) => {
+export const QueryPagination = (props: QueryPaginationProps): JSX.Element => {
   const pageCount = props.status.cache.getPageCount();
   const disabled = pageCount === 0;
   const dataPage = props.status.cache.getPage(props.status.currentPage);

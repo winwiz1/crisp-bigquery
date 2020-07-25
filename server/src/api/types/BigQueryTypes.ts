@@ -116,6 +116,7 @@ export class BigQueryRequest implements IBigQueryRequest {
   // Keeping constructor private ensures all attempts to instantiate the
   // class have to use this method (and the input data validation it uses).
   static fromJson(
+    // eslint-disable-next-line
     objJson: any,
     clientAddress: string,
     errInfo: JsonParsingError,
@@ -158,14 +159,14 @@ export class BigQueryRequest implements IBigQueryRequest {
     return BigQueryRequest.s_regexLanguage;
   }
 
-  getSqlTimeClause(): string {
+  SqlTimeClause(): string {
     const strFormat = "YYYY-MM-DD";
     const strStart = this.startDate.utc().format(strFormat);
     const strEnd = this.endDate.utc().format(strFormat);
     return `BETWEEN '${strStart} 00:00:00' AND '${strEnd} 23:59:59'`;
   }
 
-  getSqlParamClause(): string {
+  SqlWhereClause(): string {
     let ret = "";
     this.name && (ret += " AND repository_name LIKE CONCAT(@name, '%')");
     this.language && (ret += " AND repository_language LIKE CONCAT(@language, '%')");

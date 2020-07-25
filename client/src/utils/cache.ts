@@ -64,12 +64,12 @@ export class QueryCache {
     return this.m_rowCount;
   }
 
-  public readonly clear = () => {
+  public readonly clear = (): void => {
     this.m_pages.length = 0;
     this.m_rowCount = 0;
   }
 
-  public readonly isOverLimit = () => {
+  public readonly isOverLimit = (): boolean => {
     return this.m_rowCount > QueryCache.s_rowCountLimit;
   }
 

@@ -8,12 +8,12 @@ describe("Testing BigQueryRequest with invalid data", () => {
   const errInfo: JsonParsingError = { message: undefined };
 
   it("should reject empty JSON object", () => {
-    const obj: object = {};
+    const obj = {};
     expect(BigQueryRequest.fromJson(obj, validAddress, errInfo, true)).not.toBeDefined();
   });
 
   it("should reject invalid JSON object", () => {
-    const obj: object = {
+    const obj = {
       count: 100,
       endTime: "bye",
       startTime: "hello",
@@ -98,7 +98,7 @@ describe("Testing BigQueryRequest with valid data", () => {
     const testReq = TestConfig.getStockTestRequest();
     const bqRequest = TestConfig.getRequest(testReq);
     expect(bqRequest).toBeDefined();
-    const sql = bqRequest!.getSqlTimeClause();
+    const sql = bqRequest!.SqlTimeClause();
     const result = /^BETWEEN\s'\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}'\sAND\s'\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}'$/
       .test(sql);
     expect(result).toBeTruthy();

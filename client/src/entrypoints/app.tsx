@@ -14,5 +14,5 @@ ReactDOM.render(
       <QueryPageContainer  />
     </ErrorBoundary>
   </Provider>,
-  document.getElementById("react-root")
+  document.getElementById("app-root")
 );

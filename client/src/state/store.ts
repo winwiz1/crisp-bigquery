@@ -14,6 +14,7 @@ export interface IFetchState {
 }
 
 // Slice of state tree reserved for future
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface IOtherState {
 }
 

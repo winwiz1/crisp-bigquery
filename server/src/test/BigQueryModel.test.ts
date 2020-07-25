@@ -46,6 +46,7 @@ describe("Testing BigQueryModel", () => {
     let jobId: string | undefined = result1.jobId;
     let cnt = 0;
 
+    // eslint-disable-next-line no-extra-boolean-cast
     while (!!pageToken) {
       testReq.pageToken = pageToken;
       testReq.jobId = jobId;
@@ -61,7 +62,7 @@ describe("Testing BigQueryModel", () => {
 
       pageToken = result2.pageToken;
       jobId = result2.jobId;
-      // tslint:disable-next-line:no-console
+
       console.log(`cnt = ${cnt++}`);
       expect(cnt).not.toBeGreaterThan(expectedPagingCount);
     }
@@ -96,10 +97,10 @@ describe("Testing BigQueryModel", () => {
     let jobId: string | undefined = result.jobId;
     let cnt = 0;
 
+    // eslint-disable-next-line no-extra-boolean-cast
     while (!!pageToken) {
       testReq.pageToken = pageToken;
       testReq.jobId = jobId;
-      // tslint:disable-next-line:no-shadowed-variable
       const bqRequest = TestConfig.getRequest(
         testReq,
         clientAddress,
@@ -108,7 +109,6 @@ describe("Testing BigQueryModel", () => {
       expect(bqRequest).toBeDefined();
 
       await model.fetch(bqRequest!);
-      // tslint:disable-next-line:no-shadowed-variable
       const data: BigQueryRetrieval = model.Data;
       expect(data).toBeInstanceOf(
         cnt === expectedPagingCount - 1 ? Error : BigQueryRetrievalResult
@@ -117,13 +117,13 @@ describe("Testing BigQueryModel", () => {
         expect(data.message).toContain("limit");
         break;
       }
-      // tslint:disable-next-line:no-shadowed-variable
+
       const result = data as BigQueryRetrievalResult;
       expect(result.jobComplete).toBeTruthy();
 
       pageToken = result.pageToken;
       jobId = result.jobId;
-      // tslint:disable-next-line:no-console
+
       console.log(`cnt = ${cnt++}`);
       expect(cnt).not.toBeGreaterThan(expectedPagingCount);
     }
