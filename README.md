@@ -16,7 +16,7 @@
 ## Project Highlights
 Full stack starter solution that delivers Google BigQuery data to your browser. Includes Express backend and React client written in TypeScript. Works with sample GitHub data. The end users interact with the website served by Express,  supply optional search parameters and paginate through BigQuery data.
 
-Sample website developed using Crisp BigQuery as a starter project: [COVID-19 Query Tool](https://covid.winwiz1.com/). Instead of GitHub dataset it uses JHU data made available by Google via JHU dataset.
+> Sample website developed using Crisp BigQuery as a starter project: [COVID-19 Query Tool](https://covid.winwiz1.com/). Instead of GitHub dataset it uses Google data made available via [COVID-19 Open Data](https://github.com/GoogleCloudPlatform/covid-19-open-data) repository.
 
 The solution can be used to achieve the following adjectives:
 1. Data access.<br/> Suppose you need to make BigQuery data available to a team of analysts/statisticians who rely on you to write SQL statements. You implement it as a parameterised query hardcoded into the backend. The team runs ad-hoc queries by providing optional search criteria, reviews the data, exports and feeds it into the toolset of their choice (Excel, SAS and others).
