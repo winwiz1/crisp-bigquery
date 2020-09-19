@@ -54,7 +54,6 @@ class Server {
     this.m_app.use([
       helmet(isProduction()? {
         contentSecurityPolicy: {
-          browserSniff: false,
           directives: {
             frameSrc: ["'self'"],
             defaultSrc: ["'self'"],
