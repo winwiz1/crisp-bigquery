@@ -1,4 +1,4 @@
-FROM node:12.18.1-slim as build
+FROM node:12.18.4-slim as build
 RUN apt-get update -qq && apt-get upgrade -qq \
   && apt-get clean autoclean && apt-get autoremove -y \
   && rm -rf \

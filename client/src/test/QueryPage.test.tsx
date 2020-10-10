@@ -4,7 +4,7 @@
  */
 import * as React from "react";
 import { Provider } from "react-redux";
-import { render, fireEvent } from "@testing-library/react";
+import { render, fireEvent, act } from "@testing-library/react";
 import "@testing-library/jest-dom/extend-expect";
 import { rootStore } from "../state/store";
 import { QueryPageContainer } from "../components/QueryPageContainer";
@@ -52,7 +52,9 @@ describe("Testing QueryPageContainer", () => {
 
     // Toggle the accordion
     const leftClick = { button: 0 };
-    fireEvent.click(accordion!, leftClick);
+    act(() => {
+      fireEvent.click(accordion!, leftClick);
+    });
 
     // Check the toggle
     labelStartDate = container.querySelector(cssStartDateVisible);
