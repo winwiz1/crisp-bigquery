@@ -401,7 +401,7 @@ export class BigQueryModel implements IBigQueryFetcher {
     pageToken: undefined,
     params: undefined,
     query: undefined,
-    timeoutMs: 10000,
+    jobTimeoutMs: 10000,
     useQueryCache: true,
   };
 
