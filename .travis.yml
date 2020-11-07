@@ -11,7 +11,7 @@ git:
   depth: 3
 language: node_js
 node_js:
-- 12.8.0
+- 14.15.0
 before_install:
 - openssl aes-256-cbc -K $encrypted_81dd31eb889f_key -iv $encrypted_81dd31eb889f_iv
   -in key.json.enc -out ./key.json -d
