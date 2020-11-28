@@ -16,8 +16,6 @@
 ## Project Highlights
 Full stack starter solution that delivers Google BigQuery data to your browser. Includes Express backend and React client written in TypeScript. Works with sample GitHub data. The end users interact with the website served by Express,  supply optional search parameters and paginate through BigQuery data.
 
-> Sample website developed using Crisp BigQuery as a starter project: [COVID-19 Query Tool](https://covid.winwiz1.com/). Instead of GitHub dataset it uses Google data made available via [COVID-19 Open Data](https://github.com/GoogleCloudPlatform/covid-19-open-data) repository.
-
 The solution can be used to achieve the following adjectives:
 1. Data access.<br/> Suppose you need to make BigQuery data available to a team of analysts/statisticians who rely on you to write SQL statements. You implement it as a parameterised query hardcoded into the backend. The team runs ad-hoc queries by providing optional search criteria, reviews the data, exports and feeds it into the toolset of their choice (Excel, SAS and others).
 2. Presentation.<br/>The existing tabular view of data can be complimented by adding charts. Use popular libraries like [Rechart](http://recharts.org/en-US/examples) without customisation restrictions imposed by pre-built dashboards. Exercise complete control over data presentation and optionally integrate with your company website.
@@ -26,8 +24,6 @@ The solution can be used to achieve the following adjectives:
 5. Costs and cost control.<br/>There is no need to provision GCP accounts required to access BigQuery Console, you decide which accounts are required to access the Express based website. The ability to exercise complete control over the underlying queries and their costs is assisted by daily usage quotas imposed on each end user and separately on the website as a whole. Achieving the same can be difficult with pre-built dashboards where even identifying which underlying queries are used might be a challenge amplified by inability to limit the queries count.
 6. Volume of data.<br/>The solution allows to fetch up to 200,000 rows of data. E.g. 100 pages of data 2000 rows each. For comparison, as of December 2019, both the connector for Google Sheets and Google connector for Excel have 10,000 rows limitation on data transfer.
 7. Data export.<br/>Export the fetched data directly into a local CSV file. Then import into Excel or a statistical package of your choice. There is no need to use cloud storage and provide access to a cloud storage bucket.
-
->The solution uses data pagination natively supported by BigQuery and is based on the API [documentation](https://cloud.google.com/bigquery/docs/reference/rest/v2/jobs/getQueryResults) and studying the Google [client library](https://github.com/googleapis/nodejs-bigquery) source code since there are no samples utilising such pagination.
 
 ## Table of Contents
 - [Features](#features)
@@ -46,7 +42,7 @@ The features include:
 * Integration with Travis CI. It runs tests on each commit and the result is reflected by the test badge. The CI tests decrypt an encrypted credential, use it to fetch data from BigQuery and then exercise non-paginated and paginated requests looping through the latter until the end of the data is reached.
 
 ## Getting Started
-All the steps in this section can be completed in the cloud using a browser. Another option is to use your local development environment and install Google Cloud SDK there.  Both options are described below.
+At the end of this section you will have built and deployed a website hydrated by a public BigQuery dataset with GitHub data. All the steps below can be completed in the cloud using a browser. Another option is to use your local development environment and install Google Cloud SDK there.  Both options are described below.
 
 >:bulb: For the browser option you can get the repository cloned and the solution built (with working website you can interact with and query GitHub data) in under 15 min. Admittedly, this timeframe does not include the first step e.g. creating Google cloud account if you don't already have one.
 
@@ -178,6 +174,8 @@ Click on the "New query" button. The data fetched by the backend should be displ
     Then try to submit a more restrictive query, for example with lowercase 'c' as the `Repository Name` pattern and uppercase 'C' as the `Repository Language` pattern (do not type quotes).
 
     Resting the mouse cursor over the page number shows the tooltip with additional information:![Tooltip info](/docs/screenshots/screenshot3.jpg)
+
+> Another website (developed using Crisp BigQuery as a starter project): [COVID-19 Query Tool](https://virusquery.com/). Instead of data related to GitHub projects it uses COVID-19 data made available via [COVID-19 Open Data](https://github.com/GoogleCloudPlatform/covid-19-open-data) repository.
 
 ## Usage
 ### Usage Limits
