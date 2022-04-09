@@ -43,7 +43,7 @@
   "dependencies": {
     "d3-dsv": "^2.0.0",
     "loglevel": "^1.7.0",
-    "moment": "^2.29.1",
+    "moment": "^2.29.2",
     "react": "17.0.1",
     "react-day-picker": "^7.4.0",
     "react-dom": "17.0.1",
