@@ -48,7 +48,7 @@
     "moment": "^2.29.1",
     "nocache": "^2.1.0",
     "node-cache": "^5.1.2",
-    "node-fetch": "^2.6.1",
+    "node-fetch": "^2.6.7",
     "serve-favicon": "^2.5.0",
     "winston": "3.3.3"
   },
